@@ -1,0 +1,64 @@
+/* General page styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header styles */
+header {
+    display: flex;
+    align-items: center;
+    padding: 20px;
+}
+
+#company-logo {
+    width: 100px; /* Adjust the size as needed */
+}
+
+#title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-left: 20px;
+}
+
+/* Main content layout */
+.container {
+    display: flex;
+    flex-direction: column; /* Display items vertically */
+    padding: 20px;
+}
+
+/* Rows for layout control */
+.row {
+    display: flex;
+    margin: 10px 0; /* Add space between rows */
+}
+
+/* Box styles */
+.box {
+    flex: 1; /* Equal size by default */
+    padding: 20px;
+}
+
+/* Box 1 (Module Status) styles */
+#module-status {
+    flex: 2;
+    background-color: #f0f0f0;
+}
+
+/* Box 2 (Workflow Queue) styles */
+#workflow-queue {
+    background-color: #e0e0f0;
+}
+
+/* Box 3 (Future State) styles */
+#future-state {
+    flex: 2; /* Set the flex property to 2 for a 2:1 ratio */
+    background-color: #f0f0f0;
+}
+
+/* Box 4 (Ambitious) styles */
+#ambitious {
+    background-color: #e0e0f0;
+}
