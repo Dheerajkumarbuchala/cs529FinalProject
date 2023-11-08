@@ -1,0 +1,255 @@
+{
+    "locations": {
+      "webcam.pos": {
+        "coordinates": {
+          "webcam": 0,
+          "workcell": [
+            15,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "name": "webcam.pos",
+        "queue": [],
+        "state": "Empty"
+      }
+    },
+    "modules": {
+      "webcam": {
+        "active": true,
+        "config": {
+          "rest_node_address": "http://webcam_node:2001",
+          "rest_node_auth": ""
+        },
+        "id": "01HEKM3MHP7W5D3SJGQ9MAJ1WB",
+        "interface": "wei_rest_node",
+        "locations": [],
+        "model": "camera_test_node",
+        "name": "webcam",
+        "queue": [],
+        "state": "UNKNOWN",
+        "tag": null,
+        "workcell_coordinates": [
+          10,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "sleeper": {
+        "active": true,
+        "config": {
+          "rest_node_address": "http://sleeper_node:2000",
+          "rest_node_auth": ""
+        },
+        "id": "01HEKM3MHP7W5D3SJGQ9MAJ1WB",
+        "interface": "wei_rest_node",
+        "locations": [],
+        "model": "sleeper_test_node",
+        "name": "sleeper",
+        "queue": [],
+        "state": "UNKNOWN",
+        "tag": null,
+        "workcell_coordinates": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "workflows": {
+      "01HEKM3MAAGV234A4JRZ8S47PV": {
+        "experiment_id": "01HEKM46QE8QZKQWQR9G99EZYP",
+        "flowdef": [
+          {
+            "action": "sleep",
+            "args": {
+              "t": "5"
+            },
+            "checks": null,
+            "comment": "Sleep for 5 seconds before we take a picture",
+            "dependencies": [],
+            "id": "01HEKM3MA5P4ZRKH6J31E8FQCA",
+            "locations": {},
+            "module": "sleeper",
+            "name": "Sleep workcell for t seconds",
+            "priority": null,
+            "requirements": {}
+          },
+          {
+            "action": "take_picture",
+            "args": {
+              "image_name": "test_snapshot.jpg"
+            },
+            "checks": null,
+            "comment": null,
+            "dependencies": [],
+            "id": "01HEKM3MA5P4ZRKH6J31E8FQCA",
+            "locations": {},
+            "module": "webcam",
+            "name": "Take Picture",
+            "priority": null,
+            "requirements": {}
+          }
+        ],
+        "hist": {
+          "Sleep workcell for t seconds": {
+            "action_log": "",
+            "action_msg": "sleep",
+            "action_response": "succeeded"
+          },
+          "Take Picture": {
+            "action_log": "",
+            "action_msg": "take_picture",
+            "action_response": "succeeded"
+          },
+          "run_dir": "/root/.wei/experiments/Example Program_id_01HEKM46QE8QZKQWQR9G99EZYP/runs/Test - Workflow_01HEKM3MAAGV234A4JRZ8S47PV"
+        },
+        "label": "Test - Workflow",
+        "metadata": {
+          "author": "Tobias Ginsburg, Kyle Hippe, Ryan D. Lewis",
+          "info": "Example workflow for WEI",
+          "version": 0.2
+        },
+        "modules": [
+          {
+            "name": "sleeper"
+          },
+          {
+            "name": "webcam"
+          }
+        ],
+        "name": "Test - Workflow",
+        "payload": {},
+        "result": {},
+        "result_dir": "/root/.wei/experiments/Example Program_id_01HEKM46QE8QZKQWQR9G99EZYP/runs/Test - Workflow_01HEKM3MAAGV234A4JRZ8S47PV/results",
+        "run_dir": "/root/.wei/experiments/Example Program_id_01HEKM46QE8QZKQWQR9G99EZYP/runs/Test - Workflow_01HEKM3MAAGV234A4JRZ8S47PV",
+        "run_id": "01HEKM3MAAGV234A4JRZ8S47PV",
+        "run_log": "/root/.wei/experiments/Example Program_id_01HEKM46QE8QZKQWQR9G99EZYP/runs/Test - Workflow_01HEKM3MAAGV234A4JRZ8S47PV/01HEKM3MAAGV234A4JRZ8S47PV_run_log.log",
+        "simulate": true,
+        "status": "completed",
+        "step_index": 2,
+        "steps": [
+          {
+            "action": "sleep",
+            "args": {
+              "t": "5"
+            },
+            "checks": null,
+            "comment": "Sleep for 5 seconds before we take a picture",
+            "dependencies": [],
+            "id": "01HEKM3MA5P4ZRKH6J31E8FQCA",
+            "locations": {},
+            "module": "sleeper",
+            "name": "Sleep workcell for t seconds",
+            "priority": null,
+            "requirements": {}
+          },
+          {
+            "action": "take_picture",
+            "args": {
+              "image_name": "test_snapshot.jpg"
+            },
+            "checks": null,
+            "comment": null,
+            "dependencies": [],
+            "id": "01HEKM3MA5P4ZRKH6J31E8FQCA",
+            "locations": {},
+            "module": "webcam",
+            "name": "Take Picture",
+            "priority": null,
+            "requirements": {}
+          }
+        ]
+      }
+    },
+    "workcell": {
+      "name": "RPL_Modular_workcell",
+      "modules": [
+        {
+          "active": true,
+          "config": {
+            "rest_node_address": "http://sleeper_node:2000",
+            "rest_node_auth": ""
+          },
+          "id": "01HEKM3MHP7W5D3SJGQ9MAJ1WB",
+          "interface": "wei_rest_node",
+          "locations": [],
+          "model": "sleeper_test_node",
+          "name": "sleeper",
+          "queue": [],
+          "state": "INIT",
+          "tag": null,
+          "workcell_coordinates": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "active": true,
+          "config": {
+            "rest_node_address": "http://webcam_node:2001",
+            "rest_node_auth": ""
+          },
+          "id": "01HEKM3MHP7W5D3SJGQ9MAJ1WB",
+          "interface": "wei_rest_node",
+          "locations": [],
+          "model": "camera_test_node",
+          "name": "webcam",
+          "queue": [],
+          "state": "INIT",
+          "tag": null,
+          "workcell_coordinates": [
+            10,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "config": {
+        "funcx_local_ep": "",
+        "globus_group": "",
+        "globus_local_ep": "",
+        "globus_portal_ep": "",
+        "globus_search_index": "",
+        "workcell_origin_coordinates": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "locations": {
+        "webcam": {
+          "webcam.pos": 0
+        },
+        "workcell": {
+          "webcam.pos": [
+            15,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    }
+  }
