@@ -18,18 +18,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Simulate loading workflows from a JSON file (replace with actual data loading)
     const workflowsData = [
-        { name: "Workflow 1", protocols: ["Protocol 1", "Protocol 2", "Protocol 3"], size: 10, status: "failed" },
-        { name: "Workflow 2", protocols: ["Protocol A", "Protocol B"], size: 5, status: "running" },
-        { name: "Workflow 3", protocols: ["Protocol X", "Protocol Y", "Protocol Z"], size: 15, status: "queued" },
+        { name: "Workflow-1", protocols: ["Protocol 1", "Protocol 2", "Protocol 3"], size: 10, status: "failed" },
+        { name: "Workflow-2", protocols: ["Protocol A", "Protocol B"], size: 5, status: "running" },
+        { name: "Workflow-3", protocols: ["Protocol X", "Protocol Y", "Protocol Z"], size: 15, status: "queued" },
         // Add more workflow data as needed
     ];
 
     // Simulate loading modules from file
     const modulesData = [
-        { name: "Module 1", status: "BUSY", workflowRunID: "Workflow 1" },
-        { name: "Module 2", status: "ERROR", workflowRunID: "Workflow 2" }, 
-        { name: "Module 3", status: "IDLE", workflowRunID: "Workflow 3" },
-        { name: "Module 4", status: "UNKNOWN", workflowRunID: "Workflow 1" }
+        { name: "Module 1", status: "ERROR", workflowRunID: "Workflow-1" },
+        { name: "Module 2", status: "BUSY", workflowRunID: "Workflow-2" }, 
+        { name: "Module 3", status: "IDLE", workflowRunID: "Workflow-3" },
+        { name: "Module 4", status: "UNKNOWN", workflowRunID: "Workflow-3" }
         // Add more module data as needed
     ];
 
@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
         //create SVG object
         var svg = d3.select(panelName).append("svg")
         
-        //create sha[es based on item number
+        //create shapes based on item number
         for(let i = 0; i < itemNum; i++)
         {
             svg.append('rect')
@@ -95,12 +95,13 @@ document.addEventListener("DOMContentLoaded", function () {
             .data(modulesData)
             .join("rect")
             .attr("fill", function(d) {return statusColor(d.status)}) 
-            .on('mouseover',function(d){
-                d3.select(this).transition()
+            .attr('class', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+            .on('mouseover', function(e, d){
+                d3.selectAll("." + d.workflowRunID).transition()
                     .duration('50')
                     .attr("stroke-width", 2.5);})
-            .on('mouseout',function(d){
-                d3.select(this).transition()
+            .on('mouseout',function(e, d){
+                d3.selectAll("." + d.workflowRunID).transition()
                     .duration('50')
                     .attr("stroke-width", 1);
             });
@@ -133,12 +134,13 @@ document.addEventListener("DOMContentLoaded", function () {
             .data(workflowsData)
             .join("rect")
             .style('fill', function(d) {return statusColor(d.status)})
-            .on('mouseover',function(d){
-                d3.select(this).transition()
+            .attr('class',function(d) {return d.name}) //assign a class name == workflowrunID
+            .on('mouseover', function(e, d){
+                d3.selectAll("." + d.name).transition()
                     .duration('50')
                     .attr("stroke-width", 2.5);})
-            .on('mouseout',function(d){
-                d3.select(this).transition()
+            .on('mouseout', function(e, d){
+                d3.selectAll("." + d.name).transition()
                     .duration('50')
                     .attr("stroke-width", 1);
             });
@@ -158,10 +160,11 @@ document.addEventListener("DOMContentLoaded", function () {
         {
             svg.append('rect')
                 .attr('x', 10 + (50 * i))
-                .attr('y', "20%")
-                .attr('width', 60)
-                .attr('height', 40)
+                .attr('y', "30%")
+                .attr('width', 50)
+                .attr('height', 30)
                 .attr('stroke', 'black')
+                .attr('stroke-width', 1)
         }   
 
         //join shapes to data 
@@ -169,12 +172,13 @@ document.addEventListener("DOMContentLoaded", function () {
             .data(modulesData)
             .join("rect")
             .attr("fill", function(d) {return statusColor(d.status)}) 
-            .on('mouseover',function(d){
-                d3.select(this).transition()
+            .attr('class',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+            .on('mouseover', function(e, d){
+                d3.selectAll("." + d.workflowRunID).transition()
                     .duration('50')
                     .attr("stroke-width", 2.5);})
-            .on('mouseout',function(d){
-                d3.select(this).transition()
+            .on('mouseout', function(e, d){
+                d3.selectAll("." + d.workflowRunID).transition()
                     .duration('50')
                     .attr("stroke-width", 1);
             });
@@ -204,12 +208,13 @@ document.addEventListener("DOMContentLoaded", function () {
             .join("circle")
             .attr("r", function(d) {return d.size}) 
             .style('fill', function(d) {return statusColor(d.status)})
-            .on('mouseover',function(d){
-                d3.select(this).transition()
+            .attr('class',function(d) {return d.name}) //assign a class name == workflowrunID
+            .on('mouseover', function(e, d){
+                d3.selectAll("." + d.name).transition()
                     .duration('50')
                     .attr("stroke-width", 2.5);})
-            .on('mouseout',function(d){
-                d3.select(this).transition()
+            .on('mouseout', function(e, d){
+                d3.selectAll("." + d.name).transition()
                     .duration('50')
                     .attr("stroke-width", 1);
             });
