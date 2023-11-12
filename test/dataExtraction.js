@@ -1,5 +1,8 @@
 const jsonData = require('./wei.json');
 
+const workflows = jsonData.workflows;
+console.log("Workflows : ", workflows);
+
 const modules = jsonData.workcell.modules;
 
 const modules_data = []
@@ -18,4 +21,4 @@ for(var module in modules){
     modules_data.push(dict)
 }
 
-console.log(modules_data)
+console.log("Modules Data : ", modules_data);
