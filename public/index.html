@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>RPL Status</title>
+    <link rel="stylesheet" href="/public/styles/styles.css">
+</head>
+<body>
+    
+    <!-- Header Section -->
+    <header>
+        <img id="company-logo" src="/public/img/logo.png" alt="Company Logo">
+        <h1 id="title">RPL Status</h1>
+    </header>
+
+    <!-- Main Content Section -->
+    <div class="container">
+        <!-- First Row: Module Status (2:1 ratio) and Workflow Queue (1:1 ratio) -->
+        <div class="row">
+            <!-- Box 1: Module Status -->
+            <div class="box" id="module-status">
+                <h2>Module Status</h2>
+                <!-- Content for Module Status box goes here -->
+            </div>
+
+            <!-- Box 2: Workflow Queue -->
+            <div class="box" id="workflow-queue">
+                <h2>Workflow Queue</h2>
+                <div id="workflow-list">
+                    <!-- Workflow List will be generated dynamically -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Second Row: Future State (2:1 ratio) and Ambitious (1:1 ratio) -->
+        <div class="row">
+            <!-- Box 3: Future State -->
+            <div class="box" id="future-state">
+                <h2>Future State</h2>
+                <!-- Content for Future State box goes here -->
+            </div>
+            
+            <!-- Box 4: Ambitious -->
+            <div class="box" id="ambitious">
+                <h2>Ambitious</h2>
+                <!-- Content for Ambitious box goes here -->
+            </div>
+        </div>
+    </div>
+    <script src="/public/scripts/app.js"></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "01HEKM3MAAGV234A4JRZ8S47PV": {
+    "name": "Test - Workflow",
+    "modules": [
+      {
+        "name": "sleeper"
+      },
+      {
+        "name": "webcam"
+      }
+    ]
+  }
+}
