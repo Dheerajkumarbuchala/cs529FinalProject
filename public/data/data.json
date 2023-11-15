@@ -1,13 +1,66 @@
 {
-  "01HEKM3MAAGV234A4JRZ8S47PV": {
-    "name": "Test - Workflow",
-    "modules": [
-      {
-        "name": "sleeper"
-      },
-      {
-        "name": "webcam"
-      }
-    ]
+  "workflows": {
+    "01HEKM3MAAGV234A4JRZ8S47PV": {
+      "wf_name": "Test - Workflow",
+      "id": "01HEKM3MAAGV234A4JRZ8S47PV",
+      "status": "completed",
+      "step_index": 2,
+      "steps": [
+        {
+          "action": "sleep",
+          "comment": "Sleep for 5 seconds before we take a picture",
+          "id": "01HEKM3MAAGV234A4JRZ8S47PV",
+          "locations": {},
+          "module_name": "sleeper",
+          "step_name": "Sleep workcell for t seconds"
+        },
+        {
+          "action": "take_picture",
+          "comment": null,
+          "id": "01HEKM3MAAGV234A4JRZ8S47PV",
+          "locations": {},
+          "module_name": "webcam",
+          "step_name": "Take Picture"
+        }
+      ]
+    }
+  },
+  "modules": {
+    "webcam": {
+      "locations": [
+        10,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "name": "webcam",
+      "queue": [],
+      "status": "UNKNOWN",
+      "id": "01HEKM3MHP7W5D3SJGQ9MAJ1WB"
+    },
+    "sleeper": {
+      "locations": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "name": "sleeper",
+      "queue": [],
+      "status": "UNKNOWN",
+      "id": "01HEKM3MHP7W5D3SJGQ9MAJ1WB"
+    }
+  },
+  "locations": {
+    "webcam.pos": {
+      "name": "webcam.pos",
+      "parent_module": "webcam.pos",
+      "queue": [],
+      "status": "Empty"
+    }
   }
 }

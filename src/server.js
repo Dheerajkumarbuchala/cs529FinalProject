@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
-const processData = require('./processData');
+//const processData = require('./processDataV2');
+const processDataV2 = require('./processDataV2');
 
 const app = express();
 const port = 3000;
@@ -10,7 +11,8 @@ app.use('/public',express.static(path.join(__dirname, '..', 'public')));
 
 // Define a route for the root URL
 app.get('/', (req, res) => {
-  processData()
+  //processData()
+  processDataV2()
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 

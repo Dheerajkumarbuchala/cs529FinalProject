@@ -2,10 +2,9 @@ const fs = require('fs');
 const path = require('path');
 
 const processData = () => {
-    console.log('Runiing')
+    console.log('Running')
     const dataFolderPath = 'data';
     let data = {};
-
     try {
         const files = fs.readdirSync(dataFolderPath)
         files.forEach((file) => {
@@ -35,8 +34,8 @@ const processData = () => {
         console.error('Error resding folder : ', err);
     }
 
-    fs.writeFileSync("../public/data/data.json", JSON.stringify(data,null,2), 'utf8')
+    //fs.writeFileSync("../public/data/data.json", JSON.stringify(data,null,2), 'utf8')
 }
 
 
-module.exports = processData
+//module.exports = processData
