@@ -1,0 +1,84 @@
+/* General page styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Header styles */
+header {
+    grid-area: header;
+    padding: 0px;
+    display: inline-block;
+    vertical-align: bottom;
+}
+
+#company-logo {
+    display: inline-block;
+    vertical-align: center;
+    width: 100px; /* Adjust the size as needed */
+}
+
+#title {
+    display: inline-block;
+    vertical-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin-left: 20px;
+}
+
+
+/* Main content layout */
+.box-header {
+    font-size: 18px;
+    font-weight: bold;
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.container {
+    display: grid;
+    grid-template-areas: 
+    'header header'
+    'module-status workflow-queue' 
+    'future-state ambitious';
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 40px 1.25fr 1fr;
+    grid-gap: 10px;
+    padding: 10px;
+    width: calc(100vw - 80px);
+    height: calc(100vh - 110px);
+}
+
+/* Box styles */
+.box {
+    border-radius: 5px;
+    padding: 10px;
+}
+
+/* Box 1 (Module Status) styles */
+#module-status {
+    grid-area: module-status;
+    border:2px solid #b6b6b6;
+    background-color: #ffffff;
+}
+
+/* Box 2 (Workflow Queue) styles */
+#workflow-queue {
+    grid-area: workflow-queue;
+    background-color: #f0f0f0;
+}
+
+/* Box 3 (Future State) styles */
+#future-state {
+    grid-area: future-state;
+    background-color: #f0f0f0;
+}
+
+/* Box 4 (Ambitious) styles */
+#ambitious {
+    grid-area: ambitious;
+    background-color: #f0f0f0;
+}

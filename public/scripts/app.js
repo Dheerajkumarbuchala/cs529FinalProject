@@ -26,6 +26,9 @@ const allStatus = ["INIT", "new",             // New Item  => Show Gray on Modul
 
 const padding = 10;
 
+let clicked = false;
+let links = [];
+
 document.addEventListener("DOMContentLoaded", function () {
     // Get a reference to the workflow list container
     const workflowList = document.getElementById("workflow-list");
@@ -34,10 +37,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Simulate loading workflows from a JSON file (replace with actual data loading)
     const workflowsData = [
-        { name: "Workflow-1", protocols: ["Protocol 1", "Protocol 2", "Protocol 3"], size: 10, status: "failed" },
-        { name: "Workflow-2", protocols: ["Protocol A", "Protocol B"], size: 5, status: "running" },
-        { name: "Workflow-3", protocols: ["Protocol X", "Protocol Y", "Protocol Z"], size: 15, status: "queued" },
-        { name: "Workflow-4", protocols: ["Protocol X", "Protocol Y", "Protocol Z"], size: 15, status: "unknown" },
+        { name: "Workflow-1", protocols: [("Protocol 1", "succeeded"), ("Protocol 2", "succeeded"), ("Protocol 1", "failed")], status: "failed" },
+        { name: "Workflow-2", protocols: [("Protocol A", "running"), ("Protocol B", "idle")], status: "running" },
+        { name: "Workflow-3", protocols: [("Protocol X", "unknown"), ("Protocol X", "idle"), ("Protocol X", "idle")], status: "running" },
+        { name: "Workflow-4", protocols: [("Protocol X", "idle"), ("Protocol X", "idle"), ("Protocol X", "idle"), ("Protocol R", "idle")], status: "queued" },
         // Add more workflow data as needed
     ];
 
@@ -62,7 +65,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     //Create color scale 
     const statusColor = d3.scaleOrdinal().domain(allStatus)
-        .range(["gray", "gray", "white", "white", "white", "gray", "gray", "silver", "silver", "red", "red", "dodgerblue", "dodgerblue"])
+        .range(["gray", "gray", "white", "white", "white", "gray", "gray", "white", "white", "red", "red", "dodgerblue", "dodgerblue"])
+
+    const statusLineColor = d3.scaleOrdinal().domain(allStatus)
+        .range(["black", "black", "black", "black", "black", "black", "black", "silver", "silver", "black", "black", "black", "black"])
 
     /*
     // Function to create a workflow item
@@ -115,7 +121,7 @@ document.addEventListener("DOMContentLoaded", function () {
         //console.log("from initSVG(" + panelName + "): " + width + " " + height);
 
         //create SVG object
-        var svg = d3.select("#" + panelName).append("svg")
+        var svg = d3.select("#" + panelName + ".box").append("svg")
             .attr("preserveAspectRatio", "xMinYMin meet")
             .attr("width", width)
             .attr("height", height);
@@ -136,15 +142,15 @@ document.addEventListener("DOMContentLoaded", function () {
         var height = svg.style("height").replace("px", "");
 
         var boxWidth = width/itemNum - (padding/2);
-        var boxHeight = height - (padding/2);
+        var boxHeight = height/2 - (padding/2);
 
         var [moduleWidth, moduleHeight] = [(boxWidth - (padding * 3)), (boxHeight) - padding];
-
 
         // Create module block for each module
         svg.selectAll("g")
             .data(modulesData)
             .enter().append("g")
+            .attr("id", function(d) { return d.name})
             .attr("transform", function(d, i) { 
                     return "translate(" + (boxWidth * i) + "," + padding + ")"});
 
@@ -153,40 +159,44 @@ document.addEventListener("DOMContentLoaded", function () {
             .append("rect")
             .attr('width', moduleWidth)
             .attr('height', moduleHeight)
+            .attr("rx", 5)
+            .attr("ry", 5)
             .attr('stroke', 'black')
             .attr('stroke-width', 1)
             .attr("fill", "white")  
-            .attr('class', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+            .attr('id', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
             .on('mouseover', function(e, d){
-                d3.selectAll("." + d.workflowRunID).transition()
+                d3.selectAll("#" + d.workflowRunID).transition()
                     .duration('50')
                     .attr("stroke-width", 2.5);}) //highlight with stroke on hover
             .on('mouseout',function(e, d){
-                d3.selectAll("." + d.workflowRunID).transition()
+                d3.selectAll("#" + d.workflowRunID).transition()
                     .duration('50')
                     .attr("stroke-width", 1);
             });
 
-        var statWidth = moduleWidth/1.5;
+        var statWidth = moduleWidth/2.5;
         var statHeight = moduleHeight/2.5;
 
         svg.selectAll("g")
             .append("rect")
             .attr('width', statWidth)
             .attr('height', statHeight)
+            .attr("rx", 5)
+            .attr("ry", 5)
             .attr("transform", function(d) { 
-                return "translate(" + (statWidth/4) + "," + (moduleHeight/2) + ")"
+                return "translate(" + ((moduleWidth - statWidth) - padding)  + "," + padding + ")"
             })
             .attr('stroke', 'black')
             .attr('stroke-width', 1)
             .attr("fill", function(d) {return statusColor(d.status)})  
-            .attr('class', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+            .attr('id', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
             .on('mouseover', function(e, d){
-                d3.selectAll("." + d.workflowRunID).transition()
+                d3.selectAll("#" + d.workflowRunID).transition()
                     .duration('50')
                     .attr("stroke-width", 2.5);}) //highlight with stroke on hover
             .on('mouseout',function(e, d){
-                d3.selectAll("." + d.workflowRunID).transition()
+                d3.selectAll("#" + d.workflowRunID).transition()
                     .duration('50')
                     .attr("stroke-width", 1);
             });
@@ -195,50 +205,88 @@ document.addEventListener("DOMContentLoaded", function () {
         // Add text - Module Name
         svg.selectAll("g")
             .append("text")
-            .attr("x", moduleWidth/2)
-            .attr("y", moduleHeight/4)
-            .attr("text-anchor", "middle")
+            .attr("x", padding * 2)
+            .attr("y", padding * 2)
+            .attr("text-anchor", "start")
             .attr("dy", "0em")
             .text(function(d) { return d.name; })
-            .attr('class',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+            .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
             .on('mouseover', function(e, d){
-                d3.selectAll("." + d.workflowRunID).transition()
+                d3.selectAll("#" + d.workflowRunID).transition()
                     .duration('50');})
             .on('mouseout', function(e, d){
-                d3.selectAll("." + d.workflowRunID).transition()
+                d3.selectAll("#" + d.workflowRunID).transition()
                     .duration('50'); });
 
         // Add text - WorkflowRunID
         svg.selectAll("g")
             .append("text")
-            .attr("x", moduleWidth/2)
-            .attr("y", moduleHeight/4)
-            .attr("text-anchor", "middle")
+            .attr("x", padding * 2)
+            .attr("y", padding * 2)
+            .attr("text-anchor", "start")
             .attr("dy", "1em")
             .text(function(d) { return d.workflowRunID; })
-            .attr('class',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+            .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
             .on('mouseover', function(e, d){
-                d3.selectAll("." + d.workflowRunID).transition()
+                d3.selectAll("#" + d.workflowRunID).transition()
                     .duration('50');})
             .on('mouseout', function(e, d){
-                d3.selectAll("." + d.workflowRunID).transition()
+                d3.selectAll("#" + d.workflowRunID).transition()
                     .duration('50'); });
         
         // Add text - status
         svg.selectAll("g")
             .append("text")
-            .attr("x", moduleWidth/2)
-            .attr("y", (moduleHeight/2) + (statHeight/2))
+            .attr("x", (((moduleWidth - statWidth) - padding)) + statWidth/2)
+            .attr("y", padding + (statHeight/2))
             .attr("text-anchor", "middle")
             .attr("dy", ".35em")
             .text(function(d) { return d.status; })
-            .attr('class',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+            .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
             .on('mouseover', function(e, d){
-                d3.selectAll("." + d.workflowRunID).transition()
+                d3.selectAll("#" + d.workflowRunID).transition()
                     .duration('50');})
             .on('mouseout', function(e, d){
-                d3.selectAll("." + d.workflowRunID).transition()
+                d3.selectAll("#" + d.workflowRunID).transition()
                     .duration('50'); });
+
+
+        // Draw locations
+        /*
+        var locItemNum = enumerateItem(locationsData); //using dummy data for testing
+        var locBoxWidth = width/locItemNum;
+
+        var locRadius = 30;
+
+        svg.selectAll("circle")
+            .data(locationsData)
+            .enter()
+            .append("circle")
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", locRadius)
+            .attr("fill", "white")
+            .attr("class", "location")
+            .attr("id", function(d) {return d.name; })
+
+        locs = svg.selectAll(".location");
+
+        locs.attr("transform", function(d,i) {
+            return "translate(" + ((locBoxWidth*i) + (padding*2) + locRadius) + "," + (height/1.25) + ")";
+        });
+
+        locs.attr("stroke", "black")
+            .attr("stroke-width", function(d,i) {
+                if(d.workflowRunID == null)
+                {
+                    return 1;
+                }
+                else
+                {
+                    return 3;
+                }
+            });
+        */
 
     }
 
@@ -262,26 +310,114 @@ document.addEventListener("DOMContentLoaded", function () {
         svg.selectAll("g")
             .data(workflowsData)
             .enter().append("g")
+            .attr("class", function(d, i) { return "workflowBox-" + i})
             .attr("transform", function(d, i) { 
                     return "translate(" + padding + "," + ((boxHeight + (padding/2)) * i) + ")"});
         
         // Add rectangles colored by status
         svg.selectAll("g")
             .append("rect")
+            .attr("rx", 5)
+            .attr("ry", 5)
             .attr('width', width - (padding + 10))
-            .attr('height', 40)
+            .attr('height', boxHeight)
             .attr('stroke', 'black')
             .style('fill', "white")
-            .attr('class',function(d) {return d.name}) //assign a class name == workflowrunID
+            .attr('id',function(d) {return d.name}) //assign a class name == workflowrunID
             .on('mouseover', function(e, d){
-                d3.selectAll("." + d.name).transition()
+                d3.selectAll("#" + d.name)
+                    .style("cursor", "pointer")
+                    .transition()
                     .duration('50')
                     .attr("stroke-width", 2.5);})
+            // Create dropdown on click
+            .on("click", function(e, d){
+                clicked = !clicked;
+
+                var protocols = d.protocols;
+                var protocolBoxHeight = 20;
+                var fullHeight = (enumerateItem(protocols) * protocolBoxHeight) + (enumerateItem(protocols) * padding) + boxHeight;
+
+                var clickedItem = d3.select(this).attr('id');
+                var clickedItemID = parseInt(clickedItem.split('-')[1]);
+
+                if(clicked){
+                    d3.select(this).transition()
+                    .duration('50')
+                    .attr("height", fullHeight);
+
+                    for(var i = clickedItemID; i <= itemNum; i++)
+                    {
+                        //console.log("affect box .workflowBox-" + i );
+                        d3.select(".workflowBox-" + i).transition()
+                        .duration("50")
+                        .attr("transform", function(d, j) {
+                            return "translate(" + padding + "," + (((boxHeight + (padding/2)) * i) + (fullHeight-boxHeight)) + ")"});
+                    }
+
+                    for(var i = 0; i < enumerateItem(protocols); i++)
+                    {
+                        d3.select(".workflowBox-" + (clickedItemID-1))
+                            .append("g")
+                            .attr("class", "protocol-box")
+                    }
+                    
+                    d3.selectAll(".protocol-box")
+                        .attr("transform", function(d, i) { 
+                            return "translate(" + (boxWidth/4) + "," + (boxHeight + ((protocolBoxHeight + (padding/2)) * i)) + ")"})
+                        .append("rect")
+                        .attr("height", protocolBoxHeight)
+                        .attr("width", boxWidth/2)
+                        .attr("rx", "5px")
+                        .attr("ry", "5px")
+                        .attr("stroke", function(d,i){
+                            return statusLineColor(protocols[i])
+                        })
+                        .attr('fill', function(d, i) {
+                            return statusColor(protocols[i])});
+
+                    // Add text - WorkflowRunID
+                    d3.selectAll(".protocol-box")
+                        .append("text")
+                        .attr("x", boxWidth/4)
+                        .attr("y", protocolBoxHeight/2)
+                        .attr("text-anchor", "middle")
+                        .attr("dy", ".35em")
+                        .attr("fill", function(d,i){
+                            return statusLineColor(protocols[i])
+                        })
+                        .text(function(d, i) { return protocols[i]; })
+
+
+
+                }
+                if(!clicked)
+                {
+                    d3.select(this).transition()
+                    .duration('50')
+                    .attr("height", boxHeight);
+
+                    for(var i = clickedItemID; i <= itemNum; i++)
+                    {
+                        //console.log("affect box .workflowBox-" + i );
+                        d3.select(".workflowBox-" + i).transition()
+                        .duration("50")
+                        .attr("transform", function(d, j) {
+                            return "translate(" + padding + "," + (((boxHeight + (padding/2)) * i)) + ")"});
+                    }
+
+                    d3.selectAll(".protocol-box").remove();
+                     
+                }
+            })
             .on('mouseout', function(e, d){
-                d3.selectAll("." + d.name).transition()
+                d3.selectAll("#" + d.name)
+                    .style("cursor", "default")
+                    .transition()
                     .duration('50')
                     .attr("stroke-width", 1);
-            });
+            })
+
 
         // Add status marker
         svg.selectAll("g")
@@ -293,13 +429,13 @@ document.addEventListener("DOMContentLoaded", function () {
         .attr('stroke-width', 1.25)
         .style('fill', function(d, i) {
             return statusColor(d.status)})
-        .attr('class',function(d) {return d.name}) //assign a class name == workflowrunID
+        .attr('id',function(d) {return d.name}) //assign a class name == workflowrunID
         .on('mouseover', function(e, d){
-            d3.selectAll("." + d.name).transition()
+            d3.selectAll("#" + d.name).transition()
                 .duration('50')
                 .attr("stroke-width", 2.5);})
         .on('mouseout', function(e, d){
-            d3.selectAll("." + d.name).transition()
+            d3.selectAll("#" + d.name).transition()
                 .duration('50')
                 .attr("stroke-width", 1);
         });
@@ -312,13 +448,13 @@ document.addEventListener("DOMContentLoaded", function () {
             .attr("text-anchor", "start")
             .attr("dy", ".35em")
             .text(function(d) { return d.name; })
-            .attr('class', function(d) {return d.name}) //assign a class name == workflowrunID
+            .attr('id', function(d) {return d.name}) //assign a class name == workflowrunID
             .on('mouseover', function(e, d){
-                d3.selectAll("." + d.name).transition()
+                d3.selectAll("#" + d.name).transition()
                     .duration('50')
                     .attr("stroke-width", 2.5);})
             .on('mouseout', function(e, d){
-                d3.selectAll("." + d.name).transition()
+                d3.selectAll("#" + d.name).transition()
                     .duration('50')
                     .attr("stroke-width", 1);
             });
@@ -331,13 +467,13 @@ document.addEventListener("DOMContentLoaded", function () {
             .attr("text-anchor", "end")
             .attr("dy", ".35em")
             .text(function(d) { return d.status; })
-            .attr('class', function(d) {return d.name}) //assign a class name == workflowrunID
+            .attr('id', function(d) {return d.name}) //assign a class name == workflowrunID
             .on('mouseover', function(e, d){
-                d3.selectAll("." + d.name).transition()
+                d3.selectAll("#" + d.name).transition()
                     .duration('50')
                     .attr("stroke-width", 2.5);})
             .on('mouseout', function(e, d){
-                d3.selectAll("." + d.name).transition()
+                d3.selectAll("#" + d.name).transition()
                     .duration('50')
                     .attr("stroke-width", 1);
             });
@@ -356,7 +492,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var height = svg.style("height").replace("px", "");
 
         var boxWidth = width/itemNum - (padding/2);
-        var boxHeight = height - (padding/2);
+        var boxHeight = height/2 - (padding/2);
 
         var [moduleWidth, moduleHeight] = [(boxWidth - (padding * 3)), (boxHeight) - padding];
 
@@ -374,16 +510,18 @@ document.addEventListener("DOMContentLoaded", function () {
            .append("rect")
            .attr('width', moduleWidth)
            .attr('height', moduleHeight)
+           .attr("rx", 5)
+           .attr("ry", 5)
            .attr('stroke', 'black')
            .attr('stroke-width', 1)
            .attr("fill", "white") 
-           .attr('class', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+           .attr('id', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
            .on('mouseover', function(e, d){
-               d3.selectAll("." + d.workflowRunID).transition()
+               d3.selectAll("#" + d.workflowRunID).transition()
                    .duration('50')
                    .attr("stroke-width", 2.5);})
            .on('mouseout',function(e, d){
-               d3.selectAll("." + d.workflowRunID).transition()
+               d3.selectAll("#" + d.workflowRunID).transition()
                    .duration('50')
                    .attr("stroke-width", 1);
            });
@@ -396,12 +534,12 @@ document.addEventListener("DOMContentLoaded", function () {
            .attr("text-anchor", "middle")
            .attr("dy", "0em")
            .text(function(d) { return d.name; })
-           .attr('class',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+           .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
            .on('mouseover', function(e, d){
-               d3.selectAll("." + d.workflowRunID).transition()
+               d3.selectAll("#" + d.workflowRunID).transition()
                    .duration('50');})
            .on('mouseout', function(e, d){
-               d3.selectAll("." + d.workflowRunID).transition()
+               d3.selectAll("#" + d.workflowRunID).transition()
                    .duration('50'); });
 
         // Add text - WorkflowRunID
@@ -412,12 +550,12 @@ document.addEventListener("DOMContentLoaded", function () {
            .attr("text-anchor", "middle")
            .attr("dy", "1em")
            .text(function(d) { return d.workflowRunID; })
-           .attr('class',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+           .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
            .on('mouseover', function(e, d){
-               d3.selectAll("." + d.workflowRunID).transition()
+               d3.selectAll("#" + d.workflowRunID).transition()
                    .duration('50');})
            .on('mouseout', function(e, d){
-               d3.selectAll("." + d.workflowRunID).transition()
+               d3.selectAll("#" + d.workflowRunID).transition()
                    .duration('50'); });
 
 
@@ -452,16 +590,18 @@ document.addEventListener("DOMContentLoaded", function () {
             .append("rect")
             .attr('width', blockWidth)
             .attr('height', blockHeight)
+            .attr("rx", 5)
+            .attr("ry", 5)
             .attr('stroke', 'black')
             .attr('stroke-width', 1)
             .attr("fill", function(d) {return statusColor(d.status)}) 
-            .attr('class', function(d) {return d.name}) //assign a class name == workflowrunID
+            .attr('id', function(d) {return d.name}) //assign a class name == workflowrunID
             .on('mouseover', function(e, d){
-                d3.selectAll("." + d.name).transition()
+                d3.selectAll("#" + d.name).transition()
                     .duration('50')
                     .attr("stroke-width", 2.5);})
             .on('mouseout',function(e, d){
-                d3.selectAll("." + d.name).transition()
+                d3.selectAll("#" + d.name).transition()
                     .duration('50')
                     .attr("stroke-width", 1);
             });
@@ -475,12 +615,12 @@ document.addEventListener("DOMContentLoaded", function () {
             .attr("text-anchor", "middle")
             .attr("dy", "0em")
             .text(function(d) { return d.name; })
-            .attr('class',function(d) {return d.name}) //assign a class name == workflowrunID
+            .attr('id',function(d) {return d.name}) //assign a class name == workflowrunID
             .on('mouseover', function(e, d){
-                d3.selectAll("." + d.name).transition()
+                d3.selectAll("#" + d.name).transition()
                     .duration('50');})
             .on('mouseout', function(e, d){
-                d3.selectAll("." + d.name).transition()
+                d3.selectAll("#" + d.name).transition()
                     .attr("stroke-width", 1)
                     .duration('50'); });
         
@@ -492,12 +632,12 @@ document.addEventListener("DOMContentLoaded", function () {
             .attr("text-anchor", "middle")
             .attr("dy", "1em")
             .text(function(d) { return d.protocols[0]; })
-            .attr('class',function(d) {return d.name}) //assign a class name == workflowrunID
+            .attr('id',function(d) {return d.name}) //assign a class name == workflowrunID
             .on('mouseover', function(e, d){
-                d3.selectAll("." + d.name).transition()
+                d3.selectAll("#" + d.name).transition()
                     .duration('50');})
             .on('mouseout', function(e, d){
-                d3.selectAll("." + d.name).transition()
+                d3.selectAll("#" + d.name).transition()
                     .attr("stroke-width", 1)
                     .duration('50'); });
     }
@@ -512,6 +652,6 @@ document.addEventListener("DOMContentLoaded", function () {
     //** Create plots **//
     createModuleStatus("module-status");
     createWorkflowQueue("workflow-queue");
-    createFutureState("future-state");
-    createAmbitious("ambitious");
+    //createFutureState("future-state");
+    //createAmbitious("ambitious");
 });
