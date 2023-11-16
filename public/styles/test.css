@@ -8,7 +8,6 @@ body {
 /* Header styles */
 header {
     grid-area: header;
-    padding: 0px;
     display: inline-block;
     vertical-align: bottom;
 }

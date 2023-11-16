@@ -9,7 +9,7 @@ fetch("/public/data/data.json").then((response) => {
 })
 
 function fetchingData(data){
-    console.log(data);
+    //console.log(data);
 }
 
 // List of all possible statuses for data items
@@ -24,16 +24,17 @@ const allStatus = ["INIT", "new",             // New Item  => Show Gray on Modul
                    "ERROR", "failed",         // Error     => Red
                    "UNKNOWN", "unknown"];     // Unknown   => Blue
 
+// Style variables
 const padding = 10;
+const cornerRadius = 5;
 
+// D3 functional variables
 let clicked = false;
 let links = [];
 
 document.addEventListener("DOMContentLoaded", function () {
-    // Get a reference to the workflow list container
-    const workflowList = document.getElementById("workflow-list");
 
-    // Load workcell state JSON from file
+    // Load workcell state JSON from file (TO DO)
 
     // Simulate loading workflows from a JSON file (replace with actual data loading)
     const workflowsData = [
@@ -46,21 +47,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Simulate loading modules from file
     const modulesData = [
-        { name: "Module-1", status: "ERROR", workflowRunID: "Workflow-1", locations: ["Location-1", "Location-2"] },
-        { name: "Module-2", status: "BUSY", workflowRunID: "Workflow-2", locations: ["Location-2", "Location-3", "Location-4"] }, 
-        { name: "Module-3", status: "IDLE", workflowRunID: "None", locations: ["Location-4", "Location-5"] },
-        { name: "Module-4", status: "INIT", workflowRunID: "Workflow-3", locations: ["Location-6"] },
+        { name: "Arm", status: "ERROR", workflowRunID: "Workflow-1", locations: ["Location-1", "Location-2"] },
+        { name: "Camera", status: "BUSY", workflowRunID: "Workflow-2", locations: ["Location-2", "Location-3", "Location-4"] }, 
+        { name: "Liquid-Handle", status: "IDLE", workflowRunID: "None", locations: ["Location-4", "Location-5"] },
+        { name: "Scope", status: "INIT", workflowRunID: "Workflow-3", locations: ["Location-6"] },
         // Add more module data as needed
     ];
 
     // Simulate loading locations from file
     const locationsData = [
-        { name: "Location-1", workflowRunID: "Workflow-1", modules: ["Module-1"] },
-        { name: "Location-2", workflowRunID: null, modules: ["Module-1", "Module-2"] },
-        { name: "Location-3", workflowRunID: "Workflow-2", modules: ["Module-2"] },
-        { name: "Location-4", workflowRunID: null, modules: ["Module-2", "Module-3"] },
-        { name: "Location-5", workflowRunID: null, modules: ["Module-3"] },
-        { name: "Location-6", workflowRunID: "Workflow-3", modules: ["Module-4"] },     
+        { name: "Location-1", workflowRunID: "Workflow-1", modules: ["Arm"] },
+        { name: "Location-2", workflowRunID: null, modules: ["Arm", "Camera"] },
+        { name: "Location-3", workflowRunID: "Workflow-2", modules: ["Camera"] },
+        { name: "Location-4", workflowRunID: null, modules: ["Camera", "Liquid-Handle"] },
+        { name: "Location-5", workflowRunID: null, modules: ["Liquid-Handle"] },
+        { name: "Location-6", workflowRunID: "Workflow-3", modules: ["Scope"] },     
     ];
 
     //Create color scale 
@@ -69,34 +70,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const statusLineColor = d3.scaleOrdinal().domain(allStatus)
         .range(["black", "black", "black", "black", "black", "black", "black", "silver", "silver", "black", "black", "black", "black"])
-
-    /*
-    // Function to create a workflow item
-    function createWorkflowItem(workflowData) {
-        const workflowItem = document.createElement("div");
-        workflowItem.className = "workflow";
-        workflowItem.innerText = workflowData.name;
-
-        const dropdown = document.createElement("div");
-        dropdown.className = "workflow-dropdown";
-        workflowData.protocols.forEach((protocol) => {
-            const protocolItem = document.createElement("li");
-            protocolItem.innerText = protocol;
-            dropdown.appendChild(protocolItem);
-        });
-
-        workflowItem.appendChild(dropdown);
-
-        workflowItem.addEventListener("click", function () {
-            if (dropdown.style.display === "block") {
-                dropdown.style.display = "none";
-            } else {
-                dropdown.style.display = "block";
-            }
-        });
-
-        return workflowItem;
-    }*/
     
     //** Panel Plots helper functions **//
     function enumerateItem(data)
@@ -129,6 +102,20 @@ document.addEventListener("DOMContentLoaded", function () {
         return svg;
     }
 
+    // Calculates the height and width of svg
+    function calculateHeightWidthSVG(svg)
+    {
+        var width = svg.style("width").replace("px", "");
+        var height = svg.style("height").replace("px", "");
+
+        return [height,width];
+    }
+
+    function translateStr(x, y)
+    {
+        return "translate(" + x + "," + y + ")";
+    }
+
     //** Functions to initialize panels **//
     function createModuleStatus(panelName) {
         // Get number of data items to draw
@@ -138,13 +125,12 @@ document.addEventListener("DOMContentLoaded", function () {
         var svg = initSVG(panelName);
     
         // Get bounds for SVG canvas and data item elements
-        var width = svg.style("width").replace("px", "");
-        var height = svg.style("height").replace("px", "");
+        var [height, width] = calculateHeightWidthSVG(svg);
 
-        var boxWidth = width/itemNum - (padding/2);
-        var boxHeight = height/2 - (padding/2);
-
+        // Sizes for SVG objects        
+        var [boxWidth, boxHeight] = [width/itemNum - (padding/2), height/2 - (padding/2)];
         var [moduleWidth, moduleHeight] = [(boxWidth - (padding * 3)), (boxHeight) - padding];
+        var [statWidth, statHeight] = [moduleWidth/2.5, moduleHeight/2.5];
 
         // Create module block for each module
         svg.selectAll("g")
@@ -152,15 +138,15 @@ document.addEventListener("DOMContentLoaded", function () {
             .enter().append("g")
             .attr("id", function(d) { return d.name})
             .attr("transform", function(d, i) { 
-                    return "translate(" + (boxWidth * i) + "," + padding + ")"});
+                    return translateStr(boxWidth * i , padding)});
 
-        // Add rectangles colored by status
+        // Add rectangles to show module container
         svg.selectAll("g")
             .append("rect")
             .attr('width', moduleWidth)
             .attr('height', moduleHeight)
-            .attr("rx", 5)
-            .attr("ry", 5)
+            .attr("rx", cornerRadius)
+            .attr("ry", cornerRadius)
             .attr('stroke', 'black')
             .attr('stroke-width', 1)
             .attr("fill", "white")  
@@ -175,17 +161,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     .attr("stroke-width", 1);
             });
 
-        var statWidth = moduleWidth/2.5;
-        var statHeight = moduleHeight/2.5;
-
+        // Add rectangle to show status
         svg.selectAll("g")
             .append("rect")
             .attr('width', statWidth)
             .attr('height', statHeight)
-            .attr("rx", 5)
-            .attr("ry", 5)
+            .attr("rx", cornerRadius)
+            .attr("ry", cornerRadius)
             .attr("transform", function(d) { 
-                return "translate(" + ((moduleWidth - statWidth) - padding)  + "," + padding + ")"
+                return translateStr((moduleWidth - statWidth) - padding, padding)
             })
             .attr('stroke', 'black')
             .attr('stroke-width', 1)
@@ -205,7 +189,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Add text - Module Name
         svg.selectAll("g")
             .append("text")
-            .attr("x", padding * 2)
+            .attr("x", padding)
             .attr("y", padding * 2)
             .attr("text-anchor", "start")
             .attr("dy", "0em")
@@ -221,7 +205,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Add text - WorkflowRunID
         svg.selectAll("g")
             .append("text")
-            .attr("x", padding * 2)
+            .attr("x", padding)
             .attr("y", padding * 2)
             .attr("text-anchor", "start")
             .attr("dy", "1em")
@@ -252,7 +236,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         // Draw locations
-        /*
         var locItemNum = enumerateItem(locationsData); //using dummy data for testing
         var locBoxWidth = width/locItemNum;
 
@@ -272,7 +255,7 @@ document.addEventListener("DOMContentLoaded", function () {
         locs = svg.selectAll(".location");
 
         locs.attr("transform", function(d,i) {
-            return "translate(" + ((locBoxWidth*i) + (padding*2) + locRadius) + "," + (height/1.25) + ")";
+            return translateStr((locBoxWidth*i) + (padding*2) + locRadius, height/1.25 );
         });
 
         locs.attr("stroke", "black")
@@ -286,7 +269,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     return 3;
                 }
             });
-        */
 
     }
 
@@ -303,8 +285,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var width = svg.style("width").replace("px", "");
         var height = svg.style("height").replace("px", "");
 
-        var boxHeight = 40;
-        var boxWidth = width - padding;
+        var [height, width] = calculateHeightWidthSVG(svg);
+
+        var [boxHeight, boxWidth] = [40, width - padding];
 
         // Create status block for each workflowRunID
         svg.selectAll("g")
@@ -312,13 +295,13 @@ document.addEventListener("DOMContentLoaded", function () {
             .enter().append("g")
             .attr("class", function(d, i) { return "workflowBox-" + i})
             .attr("transform", function(d, i) { 
-                    return "translate(" + padding + "," + ((boxHeight + (padding/2)) * i) + ")"});
+                    return translateStr(padding, (boxHeight + (padding/2)) * i) });
         
-        // Add rectangles colored by status
+        // Add rectangles for workflowRun item
         svg.selectAll("g")
             .append("rect")
-            .attr("rx", 5)
-            .attr("ry", 5)
+            .attr("rx", cornerRadius)
+            .attr("ry", cornerRadius)
             .attr('width', width - (padding + 10))
             .attr('height', boxHeight)
             .attr('stroke', 'black')
@@ -346,6 +329,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     .duration('50')
                     .attr("height", fullHeight);
 
+                    // Move workflowRun items below the expanded workflow
                     for(var i = clickedItemID; i <= itemNum; i++)
                     {
                         //console.log("affect box .workflowBox-" + i );
@@ -355,6 +339,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             return "translate(" + padding + "," + (((boxHeight + (padding/2)) * i) + (fullHeight-boxHeight)) + ")"});
                     }
 
+                    // Show protocols within Workflow
                     for(var i = 0; i < enumerateItem(protocols); i++)
                     {
                         d3.select(".workflowBox-" + (clickedItemID-1))
@@ -362,21 +347,22 @@ document.addEventListener("DOMContentLoaded", function () {
                             .attr("class", "protocol-box")
                     }
                     
+                    // Add rectangle to show protocol, color by status
                     d3.selectAll(".protocol-box")
                         .attr("transform", function(d, i) { 
-                            return "translate(" + (boxWidth/4) + "," + (boxHeight + ((protocolBoxHeight + (padding/2)) * i)) + ")"})
+                            return translateStr(boxWidth/4, boxHeight + ((protocolBoxHeight + (padding/2)) * i))})
                         .append("rect")
                         .attr("height", protocolBoxHeight)
                         .attr("width", boxWidth/2)
-                        .attr("rx", "5px")
-                        .attr("ry", "5px")
+                        .attr("rx", cornerRadius)
+                        .attr("ry", cornerRadius)
                         .attr("stroke", function(d,i){
                             return statusLineColor(protocols[i])
                         })
                         .attr('fill', function(d, i) {
                             return statusColor(protocols[i])});
 
-                    // Add text - WorkflowRunID
+                    // Add text - step number and status
                     d3.selectAll(".protocol-box")
                         .append("text")
                         .attr("x", boxWidth/4)
@@ -386,24 +372,26 @@ document.addEventListener("DOMContentLoaded", function () {
                         .attr("fill", function(d,i){
                             return statusLineColor(protocols[i])
                         })
-                        .text(function(d, i) { return protocols[i]; })
+                        .text(function(d, i) { return "Step " + i + ": " + protocols[i]; })
 
 
 
                 }
                 if(!clicked)
                 {
+                    // Collapse workflowRun item
                     d3.select(this).transition()
                     .duration('50')
                     .attr("height", boxHeight);
 
                     for(var i = clickedItemID; i <= itemNum; i++)
                     {
-                        //console.log("affect box .workflowBox-" + i );
+                        // Move succeeding workflowRun items back to original location
                         d3.select(".workflowBox-" + i).transition()
                         .duration("50")
                         .attr("transform", function(d, j) {
-                            return "translate(" + padding + "," + (((boxHeight + (padding/2)) * i)) + ")"});
+                            return translateStr(padding, ((boxHeight + (padding/2)) * i))
+                        });
                     }
 
                     d3.selectAll(".protocol-box").remove();
@@ -488,11 +476,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var svg = initSVG(panelName);
    
         // Get bounds for SVG canvas and data item elements
-        var width = svg.style("width").replace("px", "");
-        var height = svg.style("height").replace("px", "");
+        var [height, width] = calculateHeightWidthSVG(svg);
 
-        var boxWidth = width/itemNum - (padding/2);
-        var boxHeight = height/2 - (padding/2);
+        var [boxHeight, boxWidth] = [height/2 - (padding/2), width/itemNum - (padding/2)]; 
 
         var [moduleWidth, moduleHeight] = [(boxWidth - (padding * 3)), (boxHeight) - padding];
 
@@ -503,15 +489,15 @@ document.addEventListener("DOMContentLoaded", function () {
            .enter().append("g")
            .attr("call", function(d) {return d.name})
            .attr("transform", function(d, i) { 
-                   return "translate(" + (boxWidth * i) + "," + padding + ")"});
+                   return translateStr(boxWidth * i, padding)});
 
-        // Add rectangles colored by status
+        // Add rectangles for module container
         svg.selectAll("g")
            .append("rect")
            .attr('width', moduleWidth)
            .attr('height', moduleHeight)
-           .attr("rx", 5)
-           .attr("ry", 5)
+           .attr("rx", cornerRadius)
+           .attr("ry", cornerRadius)
            .attr('stroke', 'black')
            .attr('stroke-width', 1)
            .attr("fill", "white") 
@@ -569,12 +555,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var svg = initSVG(panelName);
     
         // Get bounds for SVG elements and data item elements
-        var width = svg.style("width").replace("px", "");
-        var height = svg.style("height").replace("px", "");
+        var [height, width] = calculateHeightWidthSVG(svg);
 
-        var boxWidth = width/itemNum - (padding/2);
-        var boxHeight = height - (padding/2);
-
+        var [boxHeight, boxWidth] = [height - (padding/2), width/itemNum - (padding/2)];
         var [blockWidth, blockHeight] = [(boxWidth - padding), (boxHeight) - padding];
 
 
@@ -583,15 +566,15 @@ document.addEventListener("DOMContentLoaded", function () {
             .data(workflowsData)
             .enter().append("g")
             .attr("transform", function(d, i) { 
-                    return "translate(" + (padding + (boxWidth * i)) + "," + padding + ")"});
+                    return translateStr(padding + (boxWidth * i), padding)});
 
         // Add rectangles colored by status
         svg.selectAll("g")
             .append("rect")
             .attr('width', blockWidth)
             .attr('height', blockHeight)
-            .attr("rx", 5)
-            .attr("ry", 5)
+            .attr("rx", cornerRadius)
+            .attr("ry", cornerRadius)
             .attr('stroke', 'black')
             .attr('stroke-width', 1)
             .attr("fill", function(d) {return statusColor(d.status)}) 
@@ -642,16 +625,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     .duration('50'); });
     }
 
-    /*
-    // Generate and append workflow items to the workflow list container
-    workflowsData.forEach((workflowData) => {
-        const workflowItem = createWorkflowItem(workflowData);
-        workflowList.appendChild(workflowItem);
-    });*/
-
     //** Create plots **//
     createModuleStatus("module-status");
     createWorkflowQueue("workflow-queue");
-    //createFutureState("future-state");
-    //createAmbitious("ambitious");
+    createFutureState("future-state");
+    createAmbitious("ambitious");
 });
