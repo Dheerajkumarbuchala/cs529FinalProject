@@ -82,7 +82,7 @@ const processDataV2 = () => {
     };
   }, {});
 
-  console.log(extractedData);
+  //console.log(extractedData);
 
   fs.writeFileSync("../public/data/data.json", JSON.stringify(extractedData,null,2), 'utf8')
 }
