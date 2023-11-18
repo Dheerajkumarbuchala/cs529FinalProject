@@ -34,7 +34,7 @@ const processDataV2 = () => {
         return {
           action: step.action,
           comment: step.comment,
-          id: workflowId,
+          id: 'wf_' + workflowId,
           locations: {},
           module_name: module.name,
           step_name: step.name,
@@ -43,7 +43,7 @@ const processDataV2 = () => {
 
       workflowResult[workflowId] = {
         wf_name: workflow.name,
-        id: workflowId,
+        id: 'wf_' + workflowId,
         status: workflow.status,
         step_index: workflow.step_index,
         steps,
@@ -59,7 +59,7 @@ const processDataV2 = () => {
         name: module.name,
         queue: module.queue,
         status: module.state,
-        id: module.id,
+        id: 'wf_' + module.id,
       };
       return moduleResult;
     }, {});
