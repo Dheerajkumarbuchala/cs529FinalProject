@@ -146,10 +146,35 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             }
             
+            //Check every workflow to see if this is a transfer step
+            var isTransfer = false;
+
             for(var i = 0; i < processedData.locations.length; i++)
             {
                 var xCoord = width - ((padding + locRadius) * 2);
                 var yCoord = height/2;
+
+                for(var j = 0; j < processedData.workflows.length; j++)
+                {
+                    if(processedData.locations[i].workflowRunID == processedData.workflows[j].workflowRunID)
+                    {
+                        //if either locations in this step == module name, its a transfer
+                        var currentStep = processedData.workflows[j].steps[processedData.workflows[j].step_index];
+
+                        var target = currentStep.locations.target;
+                        var source = currentStep.locations.source;
+
+                        if(target == null || source == null)
+                        {
+                            isTransfer = false;
+                        }
+                        else
+                        {
+                            isTransfer = true;
+                        }
+                    }
+                }
+                
 
                 for(var j = 0; j < moduleInfo.length; j++)
                 {
@@ -174,7 +199,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     "x" : xCoord,
                     "y" : yCoord,
                     "parentNum" : processedData.locations[i].parent_modules.length,
-                    "workflowRunID" : processedData.locations[i].workflowRunID
+                    "workflowRunID" : processedData.locations[i].workflowRunID,
+                    "isTransferStep" : isTransfer
                 });
             }
         }
@@ -393,7 +419,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 })
                 .attr("fill", "white")  
-                .attr('id', function(d) { return d.name })
+                .attr('id',function(d) {return d.name}) //assign a class name == workflowrunID
+                .on('mouseover', function(e, d){
+                    d3.selectAll("#" + d.workflowRunID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 2.5);})
+                .on('mouseout', function(e, d){
+                    d3.selectAll("#" + d.workflowRunID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 1)});
 
 
             // BOTTOM ROW
@@ -538,7 +572,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     .attr("y2", transferInfo[0].y)
                     .attr('stroke', "black")
                     .attr("stroke-width", function(d){
-                        if(d.workflowRunID != null)
+                        if(d.workflowRunID != null && d.isTransferStep == true)
                         {
                             return 2;
                         }
@@ -548,7 +582,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     }) 
                     .attr("class", function(d){
-                        if(d.workflowRunID != null)
+                        if(d.workflowRunID != null && d.isTransferStep == true)
                         {
                             return "active";
                         }

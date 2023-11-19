@@ -163,7 +163,7 @@
         "name": "sciclops.exchange",
         "parent_modules": ["pf400", "sciclops"],
         "queue": [],
-        "workflowRunID": null 
+        "workflowRunID": "wf_02" 
       },
       {
         "name": "sealer.default",
