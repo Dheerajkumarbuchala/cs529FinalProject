@@ -1,6 +1,6 @@
 const res = null;
 
-let fetchDataPromise = fetch("/public/data/data.json")
+let fetchDataPromise = fetch("/public/data/rpl_workcell_sim.json")
     .then((response) => response.json())
     .then((data) => {
         //console.log(data);
