@@ -1,0 +1,205 @@
+{
+    "workflows": [
+      {
+        "name": "Mix Colors",
+        "workflowRunID": "wf_01",
+        "status": "running",
+        "step_index": 2,
+        "steps": [
+          {
+            "action": "transfer",
+            "comment": null,
+            "workflowRunID": "wf_01",
+            "locations": {
+              "source": "camera.plate_station",
+              "target": "ot2.deck2"
+            },
+            "module_name": "pf400",
+            "step_name": "Move from Camera to OT2",
+            "status" : "succeeded"
+          },
+          {
+            "action": "run_protocol",
+            "comment": null,
+            "workflowRunID": "wf_01",
+            "locations": {
+              "source": "ot2.deck2",
+              "target": null
+            },
+            "module_name": "ot2",
+            "step_name": "Mix all colors",
+            "status" : "succeeded"
+          },
+          {
+            "action": "transfer",
+            "comment": null,
+            "workflowRunID": "wf_01",
+            "locations": {
+              "source": "ot2.deck2",
+              "target": "camera.plate_station"
+            },
+            "module_name": "pf400",
+            "step_name": "Move to picture",
+            "status" : "running"
+          },
+          {
+            "action": "take_picture",
+            "comment": null,
+            "workflowRunID": "wf_01",
+            "locations": {
+              "source": "camera.plate_station",
+              "target": null
+            },
+            "module_name": "camera",
+            "step_name": "Take picture",
+            "status" : "idle"
+          }
+        ]
+      },
+      {
+        "name": "New Plate",
+        "workflowRunID": "wf_02",
+        "status": "failed",
+        "step_index": 0,
+        "steps": [
+          {
+            "action": "get_plate",
+            "comment": " Move initial color plate from sciclops to plate exchange",
+            "workflowRunID": "wf_02",
+            "locations": {
+              "source": null,
+              "target": "sciclops.exchange"
+            },
+            "module_name": "sciclops",
+            "step_name": "Color Plate to Plate Exchange",
+            "status": "failed"
+          },
+          {
+            "action": "transfer",
+            "comment": null,
+            "workflowRunID": "wf_02",
+            "locations": {
+              "source": "sciclops.exchange",
+              "target": "camera.plate_station"
+            },
+            "module_name": "pf400",
+            "step_name": "Move to final location"
+          }
+        ]
+      },
+      {
+        "name": "Trash Plate",
+        "workflowRunID": "wf_03",
+        "status": "queued",
+        "step_index": 0,
+        "steps": [
+          {
+            "action": "transfer",
+            "comment": null,
+            "workflowRunID": "wf_01",
+            "locations": {
+              "source": "camera.plate_station",
+              "target": "wc.trash"
+            },
+            "module_name": "pf400",
+            "step_name": "Move to trash"
+          }
+        ]
+      }
+    ],
+    "modules": [
+      {
+        "locations":["sealer.default"],
+        "name": "sealer",
+        "queue": [],
+        "status": "IDLE",
+        "workflowRunID": null
+      },
+      {
+        "locations":["peeler.default"],
+        "name": "peeler",
+        "queue": [],
+        "status": "IDLE",
+        "workflowRunID": null
+      },
+      {
+        "locations":["sciclops.exchange"],
+        "name": "sciclops",
+        "queue": [],
+        "status": "ERROR",
+        "workflowRunID": "wf_02"
+      },
+      {
+        "locations":["ot2.deck1", "ot2.deck2"],
+        "name": "ot2",
+        "queue": [],
+        "status": "IDLE",
+        "workflowRunID": null
+      },
+      {
+        "locations":["sciclops.exchange", "sealer.default", "peeler.default", "ot2.deck1", "ot2.deck2", "camera.plate_station"],
+        "name": "pf400",
+        "queue": [],
+        "status": "BUSY",
+        "workflowRunID": "wf_01"
+      },
+      {
+        "locations":["camera.plate_station"],
+        "name": "camera",
+        "queue": [],
+        "status": "IDLE",
+        "workflowRunID": null
+      }, 
+      {
+        "locations":[],
+        "name": "barty",
+        "queue": [],
+        "status": "IDLE",
+        "workflowRunID": null
+      }
+    ],
+    "locations": [
+      {
+        "name": "sciclops.exchange",
+        "parent_modules": ["pf400", "sciclops"],
+        "queue": [],
+        "workflowRunID": null 
+      },
+      {
+        "name": "sealer.default",
+        "parent_modules": ["sealer", "pf400"],
+        "queue": [],
+        "workflowRunID": null 
+      },
+      {
+        "name": "peeler.default",
+        "parent_modules": ["peeler", "pf400"],
+        "queue": [],
+        "workflowRunID": null 
+      },
+      {
+        "name": "ot2.deck1",
+        "parent_modules": ["ot2", "pf400"],
+        "queue": [],
+        "workflowRunID": null 
+      },
+      {
+        "name": "ot2.deck2",
+        "parent_modules": ["ot2", "pf400"],
+        "queue": [],
+        "workflowRunID": "wf_01" 
+      },
+      {
+        "name": "camera.plate_station",
+        "parent_modules": ["camera", "pf400"],
+        "queue": [],
+        "workflowRunID": "wf_01"
+      },
+      {
+        "name": "wc.trash",
+        "parent_modules": [],
+        "queue": [],
+        "workflowRunID": null
+      }
+    ]
+  }

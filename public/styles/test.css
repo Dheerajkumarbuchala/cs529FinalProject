@@ -42,7 +42,7 @@ header {
     grid-template-areas: 
     'header header'
     'module-status workflow-queue' 
-    'future-state ambitious';
+    'future-state future-map';
     grid-template-columns: 2fr 1fr;
     grid-template-rows: 40px 1.25fr 1fr;
     grid-gap: 10px;
@@ -76,8 +76,8 @@ header {
     background-color: #f0f0f0;
 }
 
-/* Box 4 (Ambitious) styles */
-#ambitious {
-    grid-area: ambitious;
+/* Box 4 (future-map) styles */
+#future-map {
+    grid-area: future-map;
     background-color: #f0f0f0;
 }
