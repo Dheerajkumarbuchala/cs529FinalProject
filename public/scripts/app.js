@@ -708,7 +708,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     .attr("class", function(d){
                         if(d.workflowRunID != null && d.isTransferStep == true)
                         {
-                            console.log("checking if " + d.name + " is " + d.target + " or " + d.source)
                             if(d.name == d.target)
                             {
                                 return "target";
@@ -1009,11 +1008,13 @@ document.addEventListener("DOMContentLoaded", function () {
                         .attr("height", boxHeight)
                         .attr("stroke", "black")
                         .attr("fill", "white")
+                        .attr("class", processedData.modules[j].name + "-" + i) 
 
                     cells.push({
                         "x": 100 + (padding) + (boxWidth * i),
                         "y": 0 + (boxHeight * j),
-                        "id": i*j,
+                        "id": processedData.modules[j].name + "-" + i,
+                        "cellNum": i*j,
                         "occupied": false
                     })
                 }
@@ -1049,16 +1050,59 @@ document.addEventListener("DOMContentLoaded", function () {
             .attr('id', function(d) {return d.workflowRunID}) 
 
             //LEFT OFF HERE
-            /*
             for(var i = 0; i < processedData.workflows.length; i++)
             {
                 var nowSteps = processedData.workflows[i].steps;
 
                 for(var j = 0; j < nowSteps.length; j++)
                 {
+                    var currentModule = nowSteps[j].module_name;
+                    var currentModuleCellID = currentModule + "-" + j
+                    
+                    //check if cell is filled
+                    for(var k = 0; k < cells.length; k++)
+                    {
+                        if(cells[k].id == currentModuleCellID)
+                        {
+                            console.log(processedData.workflows[i].workflowRunID + " step " +  nowSteps[j].step_name + " on module " + currentModule + " will go to cell " + cells[k].id);
 
+                            if(cells[k].occupied == true)
+                            {
+                                //find next available cell for this module
+                                var myModuleIndices = [];
+
+                                for(var l = 0; l < cells.length; l++)
+                                {
+                                    if(cells[k].id.split('-')[0] == currentModule)
+                                    {
+                                        myModuleIndices.push(l);
+                                    }
+                                }
+
+                                for(var l = 0; l < myModuleIndices.length; l++)
+                                {
+                                    if(cells[myModuleIndices[l]].occupied == false)
+                                    {
+                                        newID = cells[myModuleIndices[l]].id;
+                                    }
+                                }
+
+                                currentModuleCellID = newID;
+                            }
+                            else
+                            {
+                                cells[k].occupied = true;
+                            }
+                        }
+                    }
+
+                    d3.select("." + currentModuleCellID)
+                        .attr("fill", "gray")
+                        .attr("id", processedData.workflows[i].workflowRunID)
                 }
-            }*/
+            }
+
+            console.log(cells);
 
         }
 
