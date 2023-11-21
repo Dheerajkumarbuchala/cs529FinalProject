@@ -949,7 +949,7 @@ document.addEventListener("DOMContentLoaded", function () {
         function createFutureState(panelName) {
 
             // Get number of data items to draw
-            itemNum = enumerateItem(processedData.modules); //using dummy data for testing
+            moduleNum = enumerateItem(processedData.modules); //using dummy data for testing
 
             // Create SVG size of parent div
             var svg = initSVG(panelName);
@@ -957,10 +957,67 @@ document.addEventListener("DOMContentLoaded", function () {
             // Get bounds for SVG canvas and data item elements
             var [height, width] = calculateHeightWidthSVG(svg);
 
-            var [boxHeight, boxWidth] = [height/2 - (padding/2), width/itemNum - (padding/2)]; 
+            //get all steps
+            var steps = [];
 
-            var [moduleWidth, moduleHeight] = [(boxWidth - (padding * 3)), (boxHeight) - padding];
+            for(var i = 0; i < processedData.workflows.length; i++)
+            {
+                var wfSteps = processedData.workflows[i].steps;
 
+                for(var j = 0; j < wfSteps.length; j++)
+                {
+                    var prevModule = null;
+                    var currentModule = wfSteps[j].module_name;
+                    var nextModule = null;
+
+                    if(j >= 1)
+                    {
+                        prevModule = wfSteps[j-1].module_name;
+                    }
+
+                    if(wfSteps[j+1] != null)
+                    {
+                        nextModule = wfSteps[j+1].module_name;
+                    }
+
+                    steps.push({
+                        "name": wfSteps[j].step_name,
+                        "workflowRunID": processedData.workflows[i].workflowRunID,
+                        "step_index": j,
+                        "prevModule": prevModule,
+                        "currentModule": currentModule,
+                        "nextModule": nextModule
+                    });
+                }
+            }
+
+            var totalStepNum = steps.length;
+
+            var cellNum = totalStepNum * moduleNum;
+            var [boxHeight, boxWidth] = [height/moduleNum, (width-(100+padding))/totalStepNum]; 
+
+            var cells = [];
+
+            for(var i = 0; i < totalStepNum; i++) //rows
+            {
+                for(var j = 0; j < moduleNum; j++) //columns
+                {
+                    svg.append("rect")
+                        .attr("x", 100 + (padding) + (boxWidth * i))
+                        .attr("y", 0 + (boxHeight * j))
+                        .attr("width", boxWidth)
+                        .attr("height", boxHeight)
+                        .attr("stroke", "black")
+                        .attr("fill", "white")
+
+                    cells.push({
+                        "x": 100 + (padding) + (boxWidth * i),
+                        "y": 0 + (boxHeight * j),
+                        "id": i*j,
+                        "occupied": false
+                    })
+                }
+            }
 
             // Create module block for each module
             svg.selectAll("g")
@@ -968,61 +1025,40 @@ document.addEventListener("DOMContentLoaded", function () {
             .enter().append("g")
             .attr("call", function(d) {return d.name})
             .attr("transform", function(d, i) { 
-                    return translateStr(boxWidth * i, padding)});
+                    return translateStr(padding, boxHeight*i)});
 
             // Add rectangles for module container
             svg.selectAll("g")
             .append("rect")
-            .attr('width', moduleWidth)
-            .attr('height', moduleHeight)
+            .attr('width', 100)
+            .attr('height', boxHeight)
             .attr("rx", cornerRadius)
             .attr("ry", cornerRadius)
             .attr('stroke', 'black')
             .attr('stroke-width', 1)
             .attr("fill", "white") 
-            .attr('id', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
-            .on('mouseover', function(e, d){
-                d3.selectAll("#" + d.workflowRunID).transition()
-                    .duration('50')
-                    .attr("stroke-width", 2.5);})
-            .on('mouseout',function(e, d){
-                d3.selectAll("#" + d.workflowRunID).transition()
-                    .duration('50')
-                    .attr("stroke-width", 1);
-            });
         
             // Add text - Module name
             svg.selectAll("g")
             .append("text")
-            .attr("x", moduleWidth/2)
-            .attr("y", moduleHeight/2)
+            .attr("x", 100/2)
+            .attr("y", boxHeight/2)
             .attr("text-anchor", "middle")
-            .attr("dy", "0em")
+            .attr("dy", ".35em")
             .text(function(d) { return d.name; })
-            .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
-            .on('mouseover', function(e, d){
-                d3.selectAll("#" + d.workflowRunID).transition()
-                    .duration('50');})
-            .on('mouseout', function(e, d){
-                d3.selectAll("#" + d.workflowRunID).transition()
-                    .duration('50'); });
+            .attr('id', function(d) {return d.workflowRunID}) 
 
-            // Add text - WorkflowRunID
-            svg.selectAll("g")
-            .append("text")
-            .attr("x", moduleWidth/2)
-            .attr("y", moduleHeight/2)
-            .attr("text-anchor", "middle")
-            .attr("dy", "1em")
-            .text(function(d) { return d.workflowRunID; })
-            .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
-            .on('mouseover', function(e, d){
-                d3.selectAll("#" + d.workflowRunID).transition()
-                    .duration('50');})
-            .on('mouseout', function(e, d){
-                d3.selectAll("#" + d.workflowRunID).transition()
-                    .duration('50'); });
+            //LEFT OFF HERE
+            /*
+            for(var i = 0; i < processedData.workflows.length; i++)
+            {
+                var nowSteps = processedData.workflows[i].steps;
 
+                for(var j = 0; j < nowSteps.length; j++)
+                {
+
+                }
+            }*/
 
         }
 
@@ -1395,6 +1431,51 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr('stroke', 'black')
                 .attr('stroke-width', 1)
                 .attr("fill", "white")  
+                .attr('id', function(d) {
+                    for(var i = 0; i < upNext.length; i++)
+                    {
+                        for(var i = 0; i < upNextLocs.length; i++)
+                        {
+                            if(upNextLocs[i].target == d.name)
+                            {
+                                return upNextLocs[i].workflowRunID;
+                            }
+    
+                            return "resting";
+                        }
+                    } 
+                }) 
+                .attr("class", function(d){
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(upNextLocs[i].target == d.name)
+                        {
+                            return "upNext";
+                        }
+
+                        return "resting";
+                    }
+                })
+                .on('mouseover', function(e, d){
+                    if(d3.select(this).attr("class") == "upNext")
+                    {
+                        var wfRunID = d3.select(this).attr("id");
+
+                        d3.selectAll("#" + wfRunID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 2.5);
+                    }
+                })
+                .on('mouseout',function(e, d){
+                    if(d3.select(this).attr("class") == "upNext")
+                    {
+                        var wfRunID = d3.select(this).attr("id");
+
+                        d3.selectAll("#" + wfRunID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 1);
+                    }
+                });
 
         
             // Add text - Module Name
