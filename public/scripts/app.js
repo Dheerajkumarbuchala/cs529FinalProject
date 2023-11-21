@@ -49,13 +49,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         //Create color scale 
         const statusColor = d3.scaleOrdinal().domain(allStatus)
-            .range(["white", "white", "white", "white", "white", "dodgerblue", "dodgerblue", "lightgray", "lightgray", "crimson", "crimson", "gray", "gray"])
+            .range(["white", "white", "white", "white", "white", "#64aed7", "#64aed7", "lightgray", "lightgray", "firebrick", "firebrick", "gray", "gray"])
 
         const statusLineColor = d3.scaleOrdinal().domain(allStatus)
-            .range(["black", "black", "black", "black", "black", "black", "black", "silver", "silver", "black", "black", "black", "black"])
+            .range(["black", "black", "black", "black", "black", "black", "black", "silver", "silver", "white", "white", "black", "black"])
 
-        const statusFutureColor = d3.scaleOrdinal().domain(allStatus)
-            .range(["black", "black", "black", "black", "black", "black", "black", "black", "black", "crimson", "crimson", "black", "black"])
         
         //** Panel Plots helper functions **//
         function enumerateItem(data)
@@ -397,7 +395,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("transform", function(d) { 
                     return translateStr((moduleWidth - statWidth) - padding, padding)
                 })
-                .attr('stroke', 'black')
+                .attr('stroke', "black")
                 .attr('stroke-width', 1)
                 .attr("fill", function(d) {return statusColor(d.status)})  
                 .attr('id', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
@@ -447,6 +445,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("x", (((moduleWidth - statWidth) - padding)) + statWidth/2)
                 .attr("y", padding + (statHeight/2))
                 .attr("text-anchor", "middle")
+                .attr('fill', function(d){ return statusLineColor(d.status)})
                 .attr("dy", ".35em")
                 .text(function(d) { return d.status; })
                 .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
@@ -694,7 +693,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     .attr("y1", function(d) { return d.y})
                     .attr("x2", transferInfo[0].x )
                     .attr("y2", transferInfo[0].y )
-                    .attr('stroke', "black")
+                    .attr('stroke', function(d){
+                        if(d.workflowRunID != null && d.isTransferStep == true)
+                        {
+                            return "black";
+                        }
+                        else
+                        {
+                            return "gray";
+                        }
+                    })
                     .attr("stroke-width", function(d){
                         if(d.workflowRunID != null && d.isTransferStep == true)
                         {
@@ -740,6 +748,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             d3.selectAll(".rest").transition()
                                 .duration('100')
                                 .attr("stroke-width", 2)
+                                
                         }
                         else
                         {
@@ -747,7 +756,6 @@ document.addEventListener("DOMContentLoaded", function () {
                             d3.selectAll(".rest").transition()
                                 .duration('100')
                                 .attr("stroke-width", 0)
-
                         }
                     })
             }
@@ -997,6 +1005,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var cells = [];
 
+            var BGColorMap = d3.scaleLinear()
+                .domain([0,totalStepNum/2])
+                .range(["lightgray", "white"]);
+
+                
+            var ganttColorMap = d3.scaleLinear()
+                .domain(d3.ticks(0, processedData.workflows.length, 2))
+                .range(["coral", "paleturquoise"]);
+
             for(var i = 0; i < moduleNum; i++) //rows
             {
                 for(var j = 0; j < totalStepNum; j++) //columns
@@ -1007,7 +1024,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         .attr("width", boxWidth)
                         .attr("height", boxHeight)
                         .attr("stroke", "black")
-                        .attr("fill", "white")
+                        .attr("fill", BGColorMap(j))
                         .attr("class", processedData.modules[i].name + "-" + j) 
 
                     cells.push({
@@ -1049,10 +1066,12 @@ document.addEventListener("DOMContentLoaded", function () {
             .text(function(d) { return d.name; })
             .attr('id', function(d) {return d.workflowRunID}) 
 
-            //LEFT OFF HERE
+            //Fill in Gantt Chart
             for(var i = 0; i < processedData.workflows.length; i++)
             {
                 var nowSteps = processedData.workflows[i].steps;
+                var x = null;
+                var y = null;
 
                 for(var j = 0; j < nowSteps.length; j++)
                 {
@@ -1064,7 +1083,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     {
                         if(cells[k].id == currentModuleCellID)
                         {
-                            console.log(processedData.workflows[i].workflowRunID + " step " +  nowSteps[j].step_name + " on module " + currentModule + " will go to cell " + cells[k].id);
+
+                            x = cells[k].x;
+                            y = cells[k].y;
 
                             if(cells[k].occupied == true)
                             {
@@ -1078,16 +1099,14 @@ document.addEventListener("DOMContentLoaded", function () {
                                         myModuleIndices.push(l);
                                     }
                                 }
-                                //console.log(myModuleIndices);
-
 
                                 for(var l = 0; l < myModuleIndices.length; l++)
                                 {
-                                    console.log("cells by module index ", cells[myModuleIndices[l]])
-
                                     if(cells[myModuleIndices[l]].occupied == false)
                                     {
                                         newID = cells[myModuleIndices[l]].id;
+                                        x = cells[myModuleIndices[l]].x;
+                                        y = cells[myModuleIndices[l]].y;
                                         break;
                                     }
                                 }
@@ -1098,14 +1117,47 @@ document.addEventListener("DOMContentLoaded", function () {
                             {
                                 cells[k].occupied = true;
                             }
+
+
                         }
                     }
 
                     d3.select("." + currentModuleCellID)
-                        .attr("fill", "gray")
+                        .attr("fill", ganttColorMap(i))
                         .attr("id", processedData.workflows[i].workflowRunID)
+
+                    //Add label
+                    svg.append("text")
+                        .attr("x", x + padding)
+                        .attr("y", y)
+                        .attr("text-anchor", "start")
+                        .attr("font-size", "12px")
+                        .attr("dy", "1.25em")
+                        .text(function(d) { return processedData.workflows[i].workflowRunID + ": " + nowSteps[j].action; })
+                        .attr('id', function(d) {return processedData.workflows[i].workflowRunID}) 
                 }
             }
+
+            svg.selectAll("rect")
+                .on('mouseover', function(e, d){
+                                d3.selectAll("#" + d3.select(this).attr("id")).transition()
+                        .duration('50')
+                        .attr("stroke-width", 2.5);})
+                .on('mouseout', function(e, d){
+                    d3.selectAll("#" + d3.select(this).attr("id")).transition()
+                        .duration('50')
+                        .attr("stroke-width", 1) });
+
+            svg.selectAll("text")
+            .on('mouseover', function(e, d){
+                d3.selectAll("#" + d3.select(this).attr("id")).transition()
+                    .duration('50')
+                    .attr("stroke-width", 2.5);})
+            .on('mouseout', function(e, d){
+                d3.selectAll("#" + d3.select(this).attr("id")).transition()
+                    .duration('50')
+                    .attr("stroke-width", 1) });
+
 
             console.log(cells);
 
@@ -1166,7 +1218,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var upNext = [];
 
-            //Determine what is next 
+            //Store the locations/modules that are up next, with the WF ID that will run them next
             for (var i = 0; i < processedData.workflows.length; i++)
             {
                 var nextStep = processedData.workflows[i].steps[(processedData.workflows[i].step_index) + 1];
@@ -1264,8 +1316,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
-            console.log(upNextLocs);
-
+            // Draw locations
             locationSVG.append("circle")
                 .attr("cx", function(d)
                 {
@@ -1311,14 +1362,25 @@ document.addEventListener("DOMContentLoaded", function () {
                         {
                             if(processedData.workflows[i].status == "failed")
                             {
-                                return "crimson";
+                                return "firebrick";
                             }
                         }
                     }
 
                     return "white";
                 })  
-                .attr('id',function(d) {return d.name}) 
+                .attr('id', function(d) {return d.name}) 
+                .attr('class', function(d) {
+                    for(var i = 0; i < upNext.length; i++)
+                    {
+                        if(upNext[i].name == d.name)
+                        {
+                            return "upNext";
+                        }
+
+                        return "resting";
+                    }
+                })
                 .on('mouseover', function(e, d){
                     //if this location is upNext, highlight the location, its module, and the other panels.
                     if(d3.select(this).attr("class") == "upNext")
