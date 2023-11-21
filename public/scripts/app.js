@@ -997,23 +997,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var cells = [];
 
-            for(var i = 0; i < totalStepNum; i++) //rows
+            for(var i = 0; i < moduleNum; i++) //rows
             {
-                for(var j = 0; j < moduleNum; j++) //columns
+                for(var j = 0; j < totalStepNum; j++) //columns
                 {
                     svg.append("rect")
-                        .attr("x", 100 + (padding) + (boxWidth * i))
-                        .attr("y", 0 + (boxHeight * j))
+                        .attr("x", 100 + (padding) + (boxWidth * j))
+                        .attr("y", 0 + (boxHeight * i))
                         .attr("width", boxWidth)
                         .attr("height", boxHeight)
                         .attr("stroke", "black")
                         .attr("fill", "white")
-                        .attr("class", processedData.modules[j].name + "-" + i) 
+                        .attr("class", processedData.modules[i].name + "-" + j) 
 
                     cells.push({
-                        "x": 100 + (padding) + (boxWidth * i),
-                        "y": 0 + (boxHeight * j),
-                        "id": processedData.modules[j].name + "-" + i,
+                        "x": 100 + (padding) + (boxWidth * j),
+                        "y": 0 + (boxHeight * i),
+                        "id": processedData.modules[i].name + "-" + j,
                         "cellNum": i*j,
                         "occupied": false
                     })
@@ -1073,17 +1073,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
                                 for(var l = 0; l < cells.length; l++)
                                 {
-                                    if(cells[k].id.split('-')[0] == currentModule)
+                                    if(cells[l].id.split('-')[0] == currentModule)
                                     {
                                         myModuleIndices.push(l);
                                     }
                                 }
+                                //console.log(myModuleIndices);
+
 
                                 for(var l = 0; l < myModuleIndices.length; l++)
                                 {
+                                    console.log("cells by module index ", cells[myModuleIndices[l]])
+
                                     if(cells[myModuleIndices[l]].occupied == false)
                                     {
                                         newID = cells[myModuleIndices[l]].id;
+                                        break;
                                     }
                                 }
 
