@@ -44,7 +44,7 @@ header {
     'module-status workflow-queue' 
     'future-state future-map';
     grid-template-columns: 2fr 1fr;
-    grid-template-rows: 40px 1.25fr 1fr;
+    grid-template-rows: 40px 1fr 1fr;
     grid-gap: 10px;
     padding: 10px;
     width: calc(100vw - 80px);
@@ -79,5 +79,6 @@ header {
 /* Box 4 (future-map) styles */
 #future-map {
     grid-area: future-map;
-    background-color: #f0f0f0;
+    border:2px solid #b6b6b6;
+    background-color: #ffffff;
 }
