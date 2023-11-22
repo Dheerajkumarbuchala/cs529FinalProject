@@ -17,7 +17,7 @@ const stepStatus = ["idle", "running", "succeeded", "failed"]
 
 const allStatus = ["INIT", "new",             // New Item  => Light Sky Blue
                    "IDLE", "queued", "idle",  // Empty     => White
-                   "BUSY", "running",         // Running   => DodgerBlue 
+                   "BUSY", "running",         // Running   => Blue
                    "completed", "succeeded",  // Done      => Light Gray 
                    "ERROR", "failed",         // Error     => Red
                    "UNKNOWN", "unknown"];     // Unknown   => Gray
@@ -47,6 +47,10 @@ document.addEventListener("DOMContentLoaded", function () {
         //Modules data
         //console.log('Modules data : ', processedData.modules);
 
+        let modules = processedData.modules;
+        let workflows = processedData.workflows;
+        let locations = processedData.locations;
+
         //Create color scale 
         const statusColor = d3.scaleOrdinal().domain(allStatus)
             .range(["white", "white", "white", "white", "white", "#64aed7", "#64aed7", "lightgray", "lightgray", "firebrick", "firebrick", "gray", "gray"])
@@ -74,7 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             //create SVG object
             var svg = d3.select("#" + panelName + ".box").append("svg")
-                .attr("preserveAspectRatio", "xMinYMin meet")
+                .attr("preserveAspectRatio", "xMidYMid meet")
                 .attr("width", width)
                 .attr("height", height);
 
@@ -95,6 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return "translate(" + x + "," + y + ")";
         }
 
+        // Used to split modules into bottom row (transfer or linkless modules) and top row (links to a transfer module)
         function getRowModules(data)
         {
             //for each module, check its locations
@@ -133,6 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return [topModules, bottomModules];
         }
 
+        // Returns list of dictionaries containing information to draw each module
         function getModuleInfo(topRowModules, boxWidth, centerPaddingTop)
         {
             var moduleInfo = [];
@@ -150,7 +156,8 @@ document.addEventListener("DOMContentLoaded", function () {
             return moduleInfo;
         }
 
-        function getModuleLocationCoords(topRowModules, boxWidth, centerPaddingTop, width, height, locRadius, moduleHeight)
+        // Returns moduleInfo list and a list of dictionaries containing information to draw each location
+        function getLocationInfo(topRowModules, boxWidth, centerPaddingTop, width, height, locRadius, moduleHeight)
         {
            var moduleInfo =  getModuleInfo(topRowModules, boxWidth, centerPaddingTop);
            var locInfo = []; 
@@ -161,8 +168,9 @@ document.addEventListener("DOMContentLoaded", function () {
             var targetOrSource = null;
 
             //For every location in the state
-            for(var i = 0; i < processedData.locations.length; i++)
+            for(var i = 0; i < locations.length; i++)
             {
+                //(x,y) of SVG where location will be drawn
                 var xCoord = width - ((padding + locRadius) * 2);
                 var yCoord = height/2;
 
@@ -172,16 +180,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 var source = null;
 
                 //For every workflow
-                for(var j = 0; j < processedData.workflows.length; j++)
+                for(var j = 0; j < workflows.length; j++)
                 {
 
                     //Match location with its workflow if it has one
-                    if(processedData.locations[i].workflowRunID == processedData.workflows[j].workflowRunID)
+                    if(locations[i].workflowRunID == workflows[j].workflowRunID)
                     {
-                        step_num = processedData.workflows[j].step_index;
+                        step_num = workflows[j].step_index;
 
                         //if either locations in this step == module name, its a transfer
-                        var currentStep = processedData.workflows[j].steps[processedData.workflows[j].step_index];
+                        var currentStep = workflows[j].steps[workflows[j].step_index];
 
                         target = currentStep.locations.target;
                         source = currentStep.locations.source;
@@ -194,11 +202,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         {
                             isTransfer = true;
                             
-                            if(processedData.locations[i].name == target)
+                            if(locations[i].name == target)
                             {
                                 targetOrSource = "target";
                             }
-                            else if(processedData.locations[i].name == source)
+                            else if(locations[i].name == source)
                             {
                                 targetOrSource = "source";
                             }
@@ -212,7 +220,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 // Use module info to get (x,y) coords
                 for(var j = 0; j < moduleInfo.length; j++)
                 {
-                    if(moduleInfo[j].name == processedData.locations[i].name.split('.')[0])
+                    if(moduleInfo[j].name == locations[i].name.split('.')[0])
                     {
                         xCoord = moduleInfo[j].x + (((boxWidth- (padding * 3)) - ((locRadius*2) * moduleInfo[j].locNum))/2);
                         yCoord = moduleInfo[j].y + (moduleHeight/1.25);
@@ -221,7 +229,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     // If a module has multiple locations, move location coordinates
                     for(var k = 0; k < locInfo.length; k++)
                     {
-                        if(locInfo.length != 0 && locInfo[k].name.split('.')[0] == processedData.locations[i].name.split('.')[0])
+                        if(locInfo.length != 0 && locInfo[k].name.split('.')[0] == locations[i].name.split('.')[0])
                         {
                             xCoord += (locRadius*2);
                         }
@@ -230,22 +238,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 locInfo.push({
-                    "name" : processedData.locations[i].name,
+                    "name" : locations[i].name,
                     "x" : xCoord,
                     "y" : yCoord,
-                    "parentNum" : processedData.locations[i].parent_modules.length,
-                    "workflowRunID" : processedData.locations[i].workflowRunID,
+                    "parentNum" : locations[i].parent_modules.length,
+                    "workflowRunID" : locations[i].workflowRunID,
                     "stepNum": step_num,
                     "isTransferStep" : isTransfer, 
                     "targetOrSource": targetOrSource, 
                     "target": target,
-                    "source": source
+                    "source": source,
                 });
             }
 
             return [moduleInfo, locInfo];
         }
 
+        // Returns list of dictionaries containing information to draw each transfer module location/link
         function getTransferModuleCoords(bottomRowModules, boxWidth, height, boxHeight, centerPaddingBottom, locRadius)
         {
             var transferInfo = [];
@@ -267,55 +276,6 @@ document.addEventListener("DOMContentLoaded", function () {
             return transferInfo;
         }
 
-        function createNetwork(locInfo, transferInfo)
-        {
-            var nodes = [];
-            var links = [];
-
-            //for each location, add it as a node
-            for(var i = 0; i < locInfo.length; i++)
-            {
-                nodes.push({
-                    "id" : locInfo[i].name,
-                    "x" : locInfo[i].x,
-                    "y" : locInfo[i].y,
-                });
-            }
-
-            //for each transfer module, add it as a node
-            for(var i = 0; i < transferInfo.length; i++)
-            {
-                nodes.push({
-                    "id" : transferInfo[i].name,
-                    "x" : transferInfo[i].x,
-                    "y" : transferInfo[i].y,
-                });
-            }
-
-            // create a link between the transfer nodes and all other nodes
-            // modules are between 0 and locInfo.length - 1
-            // transfer modules are between locInfo.length and locInfo.length + transferInfo.length
-
-            for(var i = 0; i < locInfo.length; i++)
-            {
-                /*
-                links.push(
-                    d3.linkVertical()
-                    ({
-                        "source" : [nodes[i].x, nodes[i].y],
-                        "target" : [nodes[locInfo.length].x, nodes[locInfo.length].y]                    
-                    })
-                );*/
-
-                links.push({
-                    "source" : [nodes[i].x, nodes[i].y],
-                    "target" : [nodes[locInfo.length].x, nodes[locInfo.length].y]  
-                });
-            }
-
-            return [nodes, links];
-        }
-
         // Functions to draw panel plots
         function createModuleStatusNetwork(panelName)
         {
@@ -326,7 +286,7 @@ document.addEventListener("DOMContentLoaded", function () {
             var [height, width] = calculateHeightWidthSVG(svg);
 
             // Split for linking
-            var [topRowModules, bottomRowModules] = getRowModules(processedData.modules);
+            var [topRowModules, bottomRowModules] = getRowModules(modules);
 
             var [topLen, bottomLen] = [topRowModules.length, bottomRowModules.length];
             var [boxWidth, boxHeight] = [width/(Math.max(topLen, bottomLen)) - (padding/2), height/2.5 - (padding/2)];
@@ -337,15 +297,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var locRadius = 15;
 
-            var [moduleInfo, locInfo] = getModuleLocationCoords(topRowModules, boxWidth, centerPaddingTop, width, height, locRadius, moduleHeight);
+            var [moduleInfo, locInfo] = getLocationInfo(topRowModules, boxWidth, centerPaddingTop, width, height, locRadius, moduleHeight);
 
             var transferInfo = [];
             if(bottomRowModules.length > 1)
             {
                 transferInfo = getTransferModuleCoords(bottomRowModules, boxWidth, height, boxHeight, centerPaddingBottom, locRadius);
             }
-
-            var [nodes, links] = createNetwork(locInfo, transferInfo);
 
             // TOP ROW
             // Create module block for each module
@@ -452,23 +410,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         .duration('50'); });
 
     
-            // Draw links
-            /*
-            for (let i = 0; i < links.length; i++) 
-            {
-                svg
-                    .append('path')
-                    .attr('d', links[i])
-                    .attr('stroke', 'black')
-                    .attr('fill', 'none')
-                    .style("stroke-width", 1.5)
-                    .attr("class", "link")
-            }*/
-
             // Draw location Glyphs for modules
             svg.selectAll("g")
                 .exit()
-                .data(processedData.locations)
+                .data(locations)
                 .enter()
                 .append("g")
                 .attr("class", "location")
@@ -760,7 +705,7 @@ document.addEventListener("DOMContentLoaded", function () {
         function createWorkflowQueue(panelName) {
             
             // Get number of data items to draw
-            var itemNum = processedData.workflows.length; //using dummy data for testing
+            var itemNum = workflows.length; //using dummy data for testing
 
             // Create SVG size of parent div
             var svg = initSVG(panelName);
@@ -771,7 +716,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Create status block for each workflowRunID
             svg.selectAll("g")
-                .data(processedData.workflows)
+                .data(workflows)
                 .enter().append("g")
                 .attr("class", function(d, i) { return "workflowBox-" + i})
                 .attr("transform", function(d, i) { 
@@ -951,7 +896,7 @@ document.addEventListener("DOMContentLoaded", function () {
         function createFutureState(panelName) {
 
             // Get number of data items to draw
-            moduleNum = processedData.modules.length; 
+            moduleNum = modules.length; 
 
             // Create SVG size of parent div
             var svg = initSVG(panelName);
@@ -962,9 +907,9 @@ document.addEventListener("DOMContentLoaded", function () {
             //get all steps
             var steps = [];
 
-            for(var i = 0; i < processedData.workflows.length; i++)
+            for(var i = 0; i < workflows.length; i++)
             {
-                var wfSteps = processedData.workflows[i].steps;
+                var wfSteps = workflows[i].steps;
 
                 for(var j = 0; j < wfSteps.length; j++)
                 {
@@ -984,7 +929,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     steps.push({
                         "name": wfSteps[j].step_name,
-                        "workflowRunID": processedData.workflows[i].workflowRunID,
+                        "workflowRunID": workflows[i].workflowRunID,
                         "step_index": j,
                         "prevModule": prevModule,
                         "currentModule": currentModule,
@@ -1006,7 +951,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 
             var ganttColorMap = d3.scaleLinear()
-                .domain(d3.ticks(0, processedData.workflows.length, 2))
+                .domain(d3.ticks(0, workflows.length, 2))
                 .range(["coral", "paleturquoise"]);
 
             for(var i = 0; i < moduleNum; i++) //rows
@@ -1020,12 +965,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         .attr("height", boxHeight)
                         .attr("stroke", "black")
                         .attr("fill", BGColorMap(j))
-                        .attr("class", processedData.modules[i].name + "-" + j) 
+                        .attr("class", modules[i].name + "-" + j) 
 
                     cells.push({
                         "x": 100 + (padding) + (boxWidth * j),
                         "y": 0 + (boxHeight * i),
-                        "id": processedData.modules[i].name + "-" + j,
+                        "id": modules[i].name + "-" + j,
                         "cellNum": i*j,
                         "occupied": false
                     })
@@ -1034,7 +979,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Create module block for each module
             svg.selectAll("g")
-            .data(processedData.modules)
+            .data(modules)
             .enter().append("g")
             .attr("call", function(d) {return d.name})
             .attr("transform", function(d, i) { 
@@ -1062,9 +1007,9 @@ document.addEventListener("DOMContentLoaded", function () {
             .attr('id', function(d) {return d.workflowRunID}) 
 
             //Fill in Gantt Chart
-            for(var i = 0; i < processedData.workflows.length; i++)
+            for(var i = 0; i < workflows.length; i++)
             {
-                var nowSteps = processedData.workflows[i].steps;
+                var nowSteps = workflows[i].steps;
                 var x = null;
                 var y = null;
 
@@ -1119,7 +1064,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     d3.select("." + currentModuleCellID)
                         .attr("fill", ganttColorMap(i))
-                        .attr("id", processedData.workflows[i].workflowRunID)
+                        .attr("id", workflows[i].workflowRunID)
 
                     //Add label
                     svg.append("text")
@@ -1128,8 +1073,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         .attr("text-anchor", "start")
                         .attr("font-size", "12px")
                         .attr("dy", "1.25em")
-                        .text(function(d) { return processedData.workflows[i].workflowRunID + ": " + nowSteps[j].action; })
-                        .attr('id', function(d) {return processedData.workflows[i].workflowRunID}) 
+                        .text(function(d) { return workflows[i].workflowRunID + ": " + nowSteps[j].action; })
+                        .attr('id', function(d) {return workflows[i].workflowRunID}) 
                 }
             }
 
@@ -1167,7 +1112,7 @@ document.addEventListener("DOMContentLoaded", function () {
             var [height, width] = calculateHeightWidthSVG(svg);
 
             // Split for linking
-            var [topRowModules, bottomRowModules] = getRowModules(processedData.modules);
+            var [topRowModules, bottomRowModules] = getRowModules(modules);
 
             // Calculate other bounds
             var [topLen, bottomLen] = [topRowModules.length, bottomRowModules.length];
@@ -1178,7 +1123,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var locRadius = 8;
 
-            var [moduleInfo, locInfo] = getModuleLocationCoords(topRowModules, boxWidth, centerPaddingTop, width, height, locRadius, moduleHeight);
+            var [moduleInfo, locInfo] = getLocationInfo(topRowModules, boxWidth, centerPaddingTop, width, height, locRadius, moduleHeight);
 
             var transferInfo = [];
             if(bottomRowModules.length > 1)
@@ -1186,25 +1131,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 transferInfo = getTransferModuleCoords(bottomRowModules, boxWidth, height, boxHeight, centerPaddingBottom, locRadius);
             }
 
-            var [nodes, links] = createNetwork(locInfo, transferInfo);
-
             // LOCATIONS
-            /*
-            // Draw links
-            for (let i = 0; i < links.length; i++) 
-            {
-                svg
-                    .append('path')
-                    .attr('d', links[i])
-                    .attr('stroke', 'black')
-                    .attr('fill', 'none')
-                    .style("stroke-width", 1.5)
-                    .attr("class", "link")
-            }*/
-
             // Draw location Glyphs for modules
             svg.selectAll("g")
-                .data(processedData.locations)
+                .data(locations)
                 .enter()
                 .append("g")
                 .attr("class", "location")
@@ -1214,9 +1144,9 @@ document.addEventListener("DOMContentLoaded", function () {
             var upNext = [];
 
             //Store the locations/modules that are up next, with the WF ID that will run them next
-            for (var i = 0; i < processedData.workflows.length; i++)
+            for (var i = 0; i < workflows.length; i++)
             {
-                var nextStep = processedData.workflows[i].steps[(processedData.workflows[i].step_index) + 1];
+                var nextStep = workflows[i].steps[(workflows[i].step_index) + 1];
 
                 if(nextStep != null)
                 {
@@ -1229,7 +1159,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         upNext.push({
                             "name" : target,
                             "parentMod" : target.split('.')[0],
-                            "workflowRunID" : processedData.workflows[i].workflowRunID,
+                            "workflowRunID" : workflows[i].workflowRunID,
                         });
                     }
 
@@ -1238,7 +1168,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         upNext.push({
                             "name" : source,
                             "parentMod" : source.split('.')[0],
-                            "workflowRunID" : processedData.workflows[i].workflowRunID,
+                            "workflowRunID" : workflows[i].workflowRunID,
                         });
                     }
 
@@ -1250,13 +1180,13 @@ document.addEventListener("DOMContentLoaded", function () {
             //for each location, what now and what next
             for(var i = 0; i < locInfo.length; i++)
             {
-                for(var j = 0; j < processedData.workflows.length; j++)
+                for(var j = 0; j < workflows.length; j++)
                 {
-                    if(locInfo[i].workflowRunID == processedData.workflows[j].workflowRunID)
+                    if(locInfo[i].workflowRunID == workflows[j].workflowRunID)
                     {
-                        //processedData.workflows[j] is this location[i]'s workflow
+                        //workflows[j] is this location[i]'s workflow
                         //What module/location am I running on now?
-                        var currentStep = processedData.workflows[j].steps[processedData.workflows[j].step_index];
+                        var currentStep = workflows[j].steps[workflows[j].step_index];
 
                         var target = currentStep.locations.target;
                         var source = currentStep.locations.source;
@@ -1277,7 +1207,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
 
                         //What module is next?
-                        var nextStep = processedData.workflows[j].steps[(processedData.workflows[j].step_index) + 1];
+                        var nextStep = workflows[j].steps[(workflows[j].step_index) + 1];
 
                         var nextLoc = null;;
 
@@ -1305,7 +1235,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         upNextLocs.push({
                             "source": currentLoc,
                             "target": nextLoc, 
-                            "workflowRunID": processedData.workflows[j].workflowRunID
+                            "workflowRunID": workflows[j].workflowRunID
                         });
                     }
                 }
@@ -1351,11 +1281,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     return 1;
                 })
                 .attr("fill", function(d){
-                    for(var i = 0; i < processedData.workflows.length; i++)
+                    for(var i = 0; i < workflows.length; i++)
                     {
-                        if(d.workflowRunID == processedData.workflows[i].workflowRunID)
+                        if(d.workflowRunID == workflows[i].workflowRunID)
                         {
-                            if(processedData.workflows[i].status == "failed")
+                            if(workflows[i].status == "failed")
                             {
                                 return "firebrick";
                             }
