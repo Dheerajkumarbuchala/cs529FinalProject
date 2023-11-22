@@ -52,16 +52,10 @@ document.addEventListener("DOMContentLoaded", function () {
             .range(["white", "white", "white", "white", "white", "#64aed7", "#64aed7", "lightgray", "lightgray", "firebrick", "firebrick", "gray", "gray"])
 
         const statusLineColor = d3.scaleOrdinal().domain(allStatus)
-            .range(["black", "black", "black", "black", "black", "black", "black", "silver", "silver", "white", "white", "black", "black"])
+            .range(["black", "black", "black", "black", "black", "black", "black", "gray", "gray", "white", "white", "black", "black"])
 
         
         //** Panel Plots helper functions **//
-        function enumerateItem(data)
-        {
-            //return Object.keys(data).length
-            return data.length;
-        }
-
         function getParentBounds(panelName)
         {
             var width = d3.select("#" + panelName).node().getBoundingClientRect().width;
@@ -334,7 +328,7 @@ document.addEventListener("DOMContentLoaded", function () {
             // Split for linking
             var [topRowModules, bottomRowModules] = getRowModules(processedData.modules);
 
-            var [topLen, bottomLen] = [enumerateItem(topRowModules), enumerateItem(bottomRowModules)];
+            var [topLen, bottomLen] = [topRowModules.length, bottomRowModules.length];
             var [boxWidth, boxHeight] = [width/(Math.max(topLen, bottomLen)) - (padding/2), height/2.5 - (padding/2)];
             var [moduleWidth, moduleHeight] = [(boxWidth - (padding * 3)), (boxHeight) - padding];
             var [statWidth, statHeight] = [moduleWidth/2.5, moduleHeight/2.5];
@@ -377,6 +371,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("fill", "white")  
                 .attr('id', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
                 .on('mouseover', function(e, d){
+                    
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50')
                         .attr("stroke-width", 2.5);}) //highlight with stroke on hover
@@ -765,7 +760,7 @@ document.addEventListener("DOMContentLoaded", function () {
         function createWorkflowQueue(panelName) {
             
             // Get number of data items to draw
-            var itemNum = enumerateItem(processedData.workflows); //using dummy data for testing
+            var itemNum = processedData.workflows.length; //using dummy data for testing
 
             // Create SVG size of parent div
             var svg = initSVG(panelName);
@@ -805,7 +800,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     var steps = d.steps;
                     var stepBoxHeight = 20;
-                    var fullHeight = (enumerateItem(steps) * stepBoxHeight) + (enumerateItem(steps) * padding) + boxHeight;
+                    var fullHeight = (steps.length * stepBoxHeight) + (steps.length * padding) + boxHeight;
 
                     var clickedItem = d3.select(this).attr('class');
                     var clickedItemID = parseInt(clickedItem.split('-')[1]);
@@ -826,7 +821,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
 
                         // Show steps within Workflow
-                        for(var i = 0; i < enumerateItem(steps); i++)
+                        for(var i = 0; i < steps.length; i++)
                         {
                             d3.select(".workflowBox-" + (clickedItemID))
                                 .append("g")
@@ -956,7 +951,7 @@ document.addEventListener("DOMContentLoaded", function () {
         function createFutureState(panelName) {
 
             // Get number of data items to draw
-            moduleNum = enumerateItem(processedData.modules); //using dummy data for testing
+            moduleNum = processedData.modules.length; 
 
             // Create SVG size of parent div
             var svg = initSVG(panelName);
@@ -1175,7 +1170,7 @@ document.addEventListener("DOMContentLoaded", function () {
             var [topRowModules, bottomRowModules] = getRowModules(processedData.modules);
 
             // Calculate other bounds
-            var [topLen, bottomLen] = [enumerateItem(topRowModules), enumerateItem(bottomRowModules)];
+            var [topLen, bottomLen] = [topRowModules.length, bottomRowModules.length];
             var [boxWidth, boxHeight] = [width/(Math.max(topLen, bottomLen)) - (padding/2), height/2.5 - (padding/2)];
             var [moduleWidth, moduleHeight] = [(boxWidth - (padding * 3)), (boxHeight) - padding];
 
