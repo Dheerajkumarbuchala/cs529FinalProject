@@ -36,7 +36,6 @@ const arrowPoints = [[0, 0], [0, 5], [5, 2]];
 // D3 functional variables
 let clicked = false;
 
-
 document.addEventListener("DOMContentLoaded", function () {
     fetchDataPromise.then((processedData) => {
         // Access the fetched data here
@@ -97,6 +96,17 @@ document.addEventListener("DOMContentLoaded", function () {
         function translateStr(x, y)
         {
             return "translate(" + x + "," + y + ")";
+        }
+
+        function getXYFromTranslate(transform){
+            var split = transform.split("(")[1];
+
+            split = split.split(",");
+
+            var x = parseFloat(split[0]);
+            var y = parseFloat(split[1].split(")")[0]);
+
+            return [x, y];
         }
 
         // Used to split modules into bottom row (transfer or linkless modules) and top row (links to a transfer module)
@@ -730,7 +740,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr('stroke', 'black')
                 .style('fill', "white")
                 .attr("class", function(d, i) { return "workflowBox-" + i})
-                .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+                .attr('id',function(d) {return d.workflowRunID}) 
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID)
                         .style("cursor", "pointer")
@@ -748,7 +758,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     var clickedItem = d3.select(this).attr('class');
                     var clickedItemID = parseInt(clickedItem.split('-')[1]);
 
+                    //When WFRun item is clicked
                     if(clicked){
+
+                        //Increase height to fit all steps
                         d3.select(this).transition()
                         .duration('50')
                         .attr("height", fullHeight);
@@ -760,7 +773,8 @@ document.addEventListener("DOMContentLoaded", function () {
                             d3.select(".workflowBox-" + i).transition()
                             .duration("50")
                             .attr("transform", function(d, j) {
-                                return "translate(" + padding + "," + (((boxHeight + (padding/2)) * i) + (fullHeight-boxHeight)) + ")"});
+                                var [x,y] = getXYFromTranslate(d3.select(".workflowBox-" + i).attr("transform"));                            
+                                return translateStr( x, y + (fullHeight-boxHeight))});
                         }
 
                         // Show steps within Workflow
