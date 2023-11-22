@@ -1021,7 +1021,8 @@ document.addEventListener("DOMContentLoaded", function () {
             //Fill in Gantt Chart
             for(var i = 0; i < workflows.length; i++)
             {
-                var nowSteps = workflows[i].steps;
+                var nowSteps = workflows[i].steps.slice(workflows[i].step_index);
+
                 var x = null;
                 var y = null;
 
