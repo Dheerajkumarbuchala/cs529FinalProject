@@ -285,27 +285,33 @@ document.addEventListener("DOMContentLoaded", function () {
             // Get bounds for SVG canvas and data item elements
             var [height, width] = calculateHeightWidthSVG(svg);
 
-            // Split for linking
+            // Split modules for linking
             var [topRowModules, bottomRowModules] = getRowModules(modules);
 
+            // Calculate sizes of draw elements
             var [topLen, bottomLen] = [topRowModules.length, bottomRowModules.length];
             var [boxWidth, boxHeight] = [width/(Math.max(topLen, bottomLen)) - (padding/2), height/2.5 - (padding/2)];
             var [moduleWidth, moduleHeight] = [(boxWidth - (padding * 3)), (boxHeight) - padding];
             var [statWidth, statHeight] = [moduleWidth/2.5, moduleHeight/2.5];
 
+            // Used to center each row
             var [centerPaddingTop, centerPaddingBottom] = [(width - (boxWidth*topLen))/2, (width - (boxWidth*bottomLen))/2];
 
+            // Size of location glyph
             var locRadius = 15;
 
+            // Get module and location info lists
             var [moduleInfo, locInfo] = getLocationInfo(topRowModules, boxWidth, centerPaddingTop, width, height, locRadius, moduleHeight);
 
+            // If a transfer module is present, get info list
             var transferInfo = [];
             if(bottomRowModules.length > 1)
             {
                 transferInfo = getTransferModuleCoords(bottomRowModules, boxWidth, height, boxHeight, centerPaddingBottom, locRadius);
             }
 
-            // TOP ROW
+            //** DRAW TOP ROW **//
+
             // Create module block for each module
             svg.selectAll("g").remove();
             svg.selectAll("g")
@@ -327,12 +333,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr('stroke', 'black')
                 .attr('stroke-width', 1)
                 .attr("fill", "white")  
-                .attr('id', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
-                .on('mouseover', function(e, d){
-                    
+                .attr('id', function(d) {return d.workflowRunID}) 
+                .on('mouseover', function(e, d){ 
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50')
-                        .attr("stroke-width", 2.5);}) //highlight with stroke on hover
+                        .attr("stroke-width", 2.5);})
                 .on('mouseout',function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50')
@@ -351,11 +356,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr('stroke', "black")
                 .attr('stroke-width', 1)
                 .attr("fill", function(d) {return statusColor(d.status)})  
-                .attr('id', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+                .attr('id', function(d) {return d.workflowRunID}) 
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50')
-                        .attr("stroke-width", 2.5);}) //highlight with stroke on hover
+                        .attr("stroke-width", 2.5);}) 
                 .on('mouseout',function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50')
@@ -370,7 +375,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("text-anchor", "start")
                 .attr("dy", "0em")
                 .text(function(d) { return d.name; })
-                .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+                .attr('id',function(d) {return d.workflowRunID})
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50');})
@@ -385,7 +390,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("text-anchor", "start")
                 .attr("dy", "1em")
                 .text(function(d) { return d.workflowRunID; })
-                .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+                .attr('id',function(d) {return d.workflowRunID})
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50');})
@@ -401,7 +406,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr('fill', function(d){ return statusLineColor(d.status)})
                 .attr("dy", ".35em")
                 .text(function(d) { return d.status; })
-                .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+                .attr('id',function(d) {return d.workflowRunID}) 
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50');})
@@ -421,58 +426,44 @@ document.addEventListener("DOMContentLoaded", function () {
             var locationSVG = svg.selectAll(".location");
 
             locationSVG.append("circle")
-                .attr("cx", function(d)
+                .attr("cx", function(d, i)
                 {
-                    for(var i = 0; i < locInfo.length; i++)
+                    if(locInfo[i].name == d.name)
                     {
-                        if(locInfo[i].name == d.name)
-                        {
-                            return locInfo[i].x
-                            
-                        }
+                        return locInfo[i].x
                     }
                     return 0;
-                
                 })
-                .attr("cy", function(d)
+                .attr("cy", function(d, i)
                 {
-                    for(var i = 0; i < locInfo.length; i++)
+                    if(locInfo[i].name == d.name)
                     {
-                        if(locInfo[i].name == d.name)
-                        {
-                            return locInfo[i].y;
-                        }
+                        return locInfo[i].y;
                     }
-
                     return 0;
                 })
                 .attr("r", locRadius)
                 .attr('stroke', 'black')
-                .attr('stroke-width', function(d){
+                .attr('stroke-width', function(d, i){
+                    //NEEDS REWORK
+                    //should check location status, not wfrID
                     if(d.workflowRunID == null)
                     {
                         return 1;
                     }
                     else
                     {
-                        for(var i = 0; i < locInfo.length; i++)
+                        if(locInfo[i].name == d.name)
                         {
-                            if(locInfo[i].name == d.name)
+                            if(locInfo[i].targetOrSource == "source")
                             {
-                                if(locInfo[i].isTransferStep == true)
-                                {
-                                    return 2;
-                                }
-                                else
-                                {
-                                    return 3;
-                                }
+                                return 3; //Highlight loctions that are the source of a transfer
                             }
                         }
                     }
                 })
                 .attr("fill", "white")  
-                .attr('id',function(d) {return d.name}) //assign a class name == workflowrunID
+                .attr('id',function(d) {return d.name})
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50')
@@ -505,11 +496,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr('stroke', 'black')
                 .attr('stroke-width', 1)
                 .attr("fill", "white")  
-                .attr('id', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+                .attr('id', function(d) {return d.workflowRunID}) 
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50')
-                        .attr("stroke-width", 2.5);}) //highlight with stroke on hover
+                        .attr("stroke-width", 2.5);}) 
                 .on('mouseout',function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50')
@@ -528,11 +519,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr('stroke', 'black')
                 .attr('stroke-width', 1)
                 .attr("fill", function(d) {return statusColor(d.status)})  
-                .attr('id', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+                .attr('id', function(d) {return d.workflowRunID}) 
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50')
-                        .attr("stroke-width", 2.5);}) //highlight with stroke on hover
+                        .attr("stroke-width", 2.5);}) 
                 .on('mouseout',function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50')
@@ -547,7 +538,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("text-anchor", "start")
                 .attr("dy", "0em")
                 .text(function(d) { return d.name; })
-                .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+                .attr('id',function(d) {return d.workflowRunID}) 
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50');})
@@ -562,7 +553,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("text-anchor", "start")
                 .attr("dy", "1em")
                 .text(function(d) { return d.workflowRunID; })
-                .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+                .attr('id',function(d) {return d.workflowRunID}) 
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50');})
@@ -577,7 +568,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("text-anchor", "middle")
                 .attr("dy", ".35em")
                 .text(function(d) { return d.status; })
-                .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
+                .attr('id',function(d) {return d.workflowRunID}) 
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50');})
@@ -594,14 +585,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     svg.append("circle")
                         .attr("cx", transferInfo[i].x)
                         .attr("cy", transferInfo[i].y)
-                        .attr("r", locRadius)
-                        .attr("fill", "white")
+                        .attr("r", locRadius/2)
+                        .attr("fill", "black")
                         .attr("stroke", "black")
                         .attr("stroke-width", 3)
+                        .attr("class", "transferLocation")
                 }
 
             }
 
+            // Create arrow marker
             svg
                 .append('defs')
                 .append('marker')
@@ -680,6 +673,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 d3.selectAll(".target")
                     .attr('marker-start', 'url(#arrow)')
 
+                d3.selectAll(".rest")
+                    .style("stroke-dasharray", ("3, 3"))
+
                 d3.selectAll("#transferLinks")
                     .on("click", function(e,d)
                     {
@@ -698,6 +694,8 @@ document.addEventListener("DOMContentLoaded", function () {
                                 .attr("stroke-width", 0)
                         }
                     })
+
+                d3.selectAll(".transferLocation").raise();
             }
 
         }
