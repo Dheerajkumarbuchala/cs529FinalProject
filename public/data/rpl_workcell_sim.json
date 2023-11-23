@@ -84,6 +84,18 @@
             },
             "module_name": "pf400",
             "step_name": "Move to final location"
+          },
+          {
+            "action": "take_picture",
+            "comment": null,
+            "workflowRunID": "wf_01",
+            "locations": {
+              "source": "camera.plate_station",
+              "target": null
+            },
+            "module_name": "camera",
+            "step_name": "Take picture",
+            "status" : "idle"
           }
         ]
       },

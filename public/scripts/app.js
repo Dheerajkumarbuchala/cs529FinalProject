@@ -321,7 +321,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             //** DRAW TOP ROW **//
-
             // Create module block for each module
             svg.selectAll("g").remove();
             svg.selectAll("g")
@@ -952,20 +951,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var totalStepNum = steps.length;
 
-            var cellNum = totalStepNum * moduleNum;
             var [boxHeight, boxWidth] = [height/moduleNum, (width-(100+padding))/totalStepNum]; 
 
-            var cells = [];
-
+        
             var BGColorMap = d3.scaleLinear()
                 .domain([0,totalStepNum/2])
                 .range(["lightgray", "white"]);
-
                 
+            // Colors to distinguish WFR_ID
             var ganttColorMap = d3.scaleLinear()
                 .domain(d3.ticks(0, workflows.length, 2))
                 .range(["coral", "paleturquoise"]);
 
+            
+            // Initialize cells of chart
+            var cells = [];
+            
             for(var i = 0; i < moduleNum; i++) //rows
             {
                 for(var j = 0; j < totalStepNum; j++) //columns
@@ -1081,7 +1082,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                     //Add label
                     svg.append("text")
-                        .attr("x", x + padding)
+                        .attr("x", x + (padding/2))
                         .attr("y", y)
                         .attr("text-anchor", "start")
                         .attr("font-size", "12px")
@@ -1111,91 +1112,117 @@ document.addEventListener("DOMContentLoaded", function () {
                     .duration('50')
                     .attr("stroke-width", 1) });
 
-
-            console.log(cells);
-
         }
+
+        function createNextStepLocationInfo(locInfo, upNextLocs)
+        {
+            for(var i = 0; i < locInfo.length; i++)
+            {
+                var step_num = null;
+
+                var target = null;
+                var source = null;
+
+                var nextWfrID;
+
+                //For every workflow
+                for(var j = 0; j < workflows.length; j++)
+                {
+                    //Match location with its workflow if it has one
+                    if(locations[i].workflowRunID == workflows[j].workflowRunID)
+                    {
+                        step_num = workflows[j].step_index + 1;
+
+                        //if either locations in this step == module name, its a transfer
+                        var nextStep = workflows[j].steps[workflows[j].step_index + 1];
+
+                        target = nextStep.locations.target;
+                        source = nextStep.locations.source;
+
+                        if(target == null || source == null)
+                        {
+                            isTransfer = false;
+                        }
+                        else
+                        {
+                            isTransfer = true;
+                            
+                            if(locations[i].name == target)
+                            {
+                                targetOrSource = "target";
+                            }
+                            else if(locations[i].name == source)
+                            {
+                                targetOrSource = "source";
+                            }
+                            else{
+                                targetOrSource = null;
+                            }
+                        }
+                    }
+                }
+                
+                for(var j = 0; j < upNextLocs.length; j++)
+                {
+                    if(locInfo[i].name == upNextLocs[j].target)
+                    {
+                        nextWfrID = upNextLocs[j].workflowRunID;
+                    }
+                }
+
+                locInfo[i].stepNum = step_num;
+                locInfo[i].isTransferStep = isTransfer;
+                locInfo[i].targetOrSource = targetOrSource;
+                locInfo[i].target = target;
+                locInfo[i].source = source;
+                locInfo[i].workflowRunID = nextWfrID;
+            }
+
+            return locInfo;
+        }
+
 
         function createFutureMap(panelName) 
         {
             // Create SVG size of parent div
             var svg = initSVG(panelName);
-        
+
             // Get bounds for SVG canvas and data item elements
             var [height, width] = calculateHeightWidthSVG(svg);
 
-            // Split for linking
+            // Split modules for linking
             var [topRowModules, bottomRowModules] = getRowModules(modules);
 
-            // Calculate other bounds
+            // Calculate sizes of draw elements
             var [topLen, bottomLen] = [topRowModules.length, bottomRowModules.length];
             var [boxWidth, boxHeight] = [width/(Math.max(topLen, bottomLen)) - (padding/2), height/2.5 - (padding/2)];
             var [moduleWidth, moduleHeight] = [(boxWidth - (padding * 3)), (boxHeight) - padding];
+            var [statWidth, statHeight] = [moduleWidth/2.5, moduleHeight/2.5];
 
+            // Used to center each row
             var [centerPaddingTop, centerPaddingBottom] = [(width - (boxWidth*topLen))/2, (width - (boxWidth*bottomLen))/2];
 
+            // Size of location glyph
             var locRadius = 8;
+            var textSize = "12px";
 
-            var [moduleInfo, locInfo] = getLocationInfo(topRowModules, boxWidth, centerPaddingTop, width, height, locRadius, moduleHeight);
+            // Get module and location info lists
+            var [moduleInfo, oldLocInfo] = getLocationInfo(topRowModules, boxWidth, centerPaddingTop, width, height, locRadius, moduleHeight);
 
+            // If a transfer module is present, get info list
             var transferInfo = [];
             if(bottomRowModules.length > 1)
             {
                 transferInfo = getTransferModuleCoords(bottomRowModules, boxWidth, height, boxHeight, centerPaddingBottom, locRadius);
             }
 
-            // LOCATIONS
-            // Draw location Glyphs for modules
-            svg.selectAll("g")
-                .data(locations)
-                .enter()
-                .append("g")
-                .attr("class", "location")
-
-            var locationSVG = svg.selectAll(".location");
-
-            var upNext = [];
-
-            //Store the locations/modules that are up next, with the WF ID that will run them next
-            for (var i = 0; i < workflows.length; i++)
-            {
-                var nextStep = workflows[i].steps[(workflows[i].step_index) + 1];
-
-                if(nextStep != null)
-                {
-                    //locations used in the next step
-                    var target = nextStep.locations.target;
-                    var source = nextStep.locations.source;
-
-                    if(target != null)
-                    {
-                        upNext.push({
-                            "name" : target,
-                            "parentMod" : target.split('.')[0],
-                            "workflowRunID" : workflows[i].workflowRunID,
-                        });
-                    }
-
-                    if(source != null)
-                    {
-                        upNext.push({
-                            "name" : source,
-                            "parentMod" : source.split('.')[0],
-                            "workflowRunID" : workflows[i].workflowRunID,
-                        });
-                    }
-
-                }
-            }
-
             var upNextLocs = [];
-
             //for each location, what now and what next
-            for(var i = 0; i < locInfo.length; i++)
+            for(var i = 0; i < oldLocInfo.length; i++)
             {
                 for(var j = 0; j < workflows.length; j++)
                 {
-                    if(locInfo[i].workflowRunID == workflows[j].workflowRunID)
+                    if(oldLocInfo[i].workflowRunID == workflows[j].workflowRunID)
                     {
                         //workflows[j] is this location[i]'s workflow
                         //What module/location am I running on now?
@@ -1248,142 +1275,28 @@ document.addEventListener("DOMContentLoaded", function () {
                         upNextLocs.push({
                             "source": currentLoc,
                             "target": nextLoc, 
-                            "workflowRunID": workflows[j].workflowRunID
+                            "workflowRunID": workflows[j].workflowRunID, 
+                            "nextStepIndex": (workflows[j].step_index) + 1
                         });
                     }
                 }
             }
 
-            // Draw locations
-            locationSVG.append("circle")
-                .attr("cx", function(d)
-                {
-                    for(var i = 0; i < locInfo.length; i++)
-                    {
-                        if(locInfo[i].name == d.name)
-                        {
-                            return locInfo[i].x;
-                        }
-                    }
-                    return 0;
-                
-                })
-                .attr("cy", function(d)
-                {
-                    for(var i = 0; i < locInfo.length; i++)
-                    {
-                        if(locInfo[i].name == d.name)
-                        {
-                            return locInfo[i].y;
-                        }
-                    }
+            //console.log(upNextLocs);
 
-                    return 0;
-                })
-                .attr("r", locRadius)
-                .attr('stroke', 'black')
-                .attr('stroke-width', function(d){
-                    for(var i = 0; i < upNext.length; i++)
-                    {
-                        if(d.name == upNext[i].name)
-                        {
-                            return 2.5;
-                        }
-                    }
+            console.log("old loc info: ", oldLocInfo);
+            locInfo = createNextStepLocationInfo(oldLocInfo, upNextLocs);
+            console.log("new loc info: ", locInfo);
 
-                    return 1;
-                })
-                .attr("fill", function(d){
-                    for(var i = 0; i < workflows.length; i++)
-                    {
-                        if(d.workflowRunID == workflows[i].workflowRunID)
-                        {
-                            if(workflows[i].status == "failed")
-                            {
-                                return "firebrick";
-                            }
-                        }
-                    }
-
-                    return "white";
-                })  
-                .attr('id', function(d) {return d.name}) 
-                .attr('class', function(d) {
-                    for(var i = 0; i < upNext.length; i++)
-                    {
-                        if(upNext[i].name == d.name)
-                        {
-                            return "upNext";
-                        }
-
-                        return "resting";
-                    }
-                })
-                .on('mouseover', function(e, d){
-                    //if this location is upNext, highlight the location, its module, and the other panels.
-                    if(d3.select(this).attr("class") == "upNext")
-                    {
-                        d3.select(this).transition()
-                            .duration(50)
-                            .attr("stroke-width", 2.5)
-                    }
-
-                    var wfRunId = null;
-
-                    //get wfRunId
-                    for(var i = 0; i < upNext.length; i++)
-                    {
-                        if(d.name == upNext[i].name)
-                        {
-                            wfRunId = upNext[i].workflowRunID;
-                        }
-                    }
-
-                    if(wfRunId != null)
-                    {
-                        d3.selectAll("#" + d.wfRunID).transition()
-                        .duration('50')
-                        .attr("stroke-width", 2.5);
-                    }
-                })
-                .on('mouseout', function(e, d){
-                    //if this location is upNext, highlight the location, its module, and the other panels.
-                    if(d3.select(this).attr("class") == "upNext")
-                    {
-                        d3.select(this).transition()
-                            .duration(50)
-                            .attr("stroke-width", 1)
-                    }
-
-                    var wfRunId = null;
-
-                    //get wfRunId
-                    for(var i = 0; i < upNext.length; i++)
-                    {
-                        if(d.name == upNext[i].name)
-                        {
-                            wfRunId = upNext[i].workflowRunID;
-                        }
-                    }
-
-                    if(wfRunId != null)
-                    {
-                        d3.selectAll("#" + d.wfRunID).transition()
-                        .duration('50')
-                        .attr("stroke-width", 1);
-                    }
-                })
-
-
-            // TOP ROW
+            //** DRAW TOP ROW **//
             // Create module block for each module
+            svg.selectAll("g").remove();
             svg.selectAll("g")
-                .exit()
                 .data(topRowModules)
                 .enter()
                 .append("g")
                 .attr("class", "topModule")
-                 
+                
             var topRowSVG = svg.selectAll(".topModule")
                 .attr("transform", function(d, i) { 
                         return translateStr((boxWidth * i) + centerPaddingTop, padding)});
@@ -1398,46 +1311,42 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr('stroke-width', 1)
                 .attr("fill", "white")  
                 .attr('id', function(d) {
-                    for(var i = 0; i < upNext.length; i++)
+                    for(var i = 0; i < upNextLocs.length; i++)
                     {
-                        if(upNext[i].parentMod == d.name)
+                        if(d.name == upNextLocs[i].target.split(".")[0])
                         {
-                            return upNext[i].workflowRunID;
+                            return upNextLocs[i].workflowRunID;
                         }
-                        return d.name;
-                    } 
+                    }
                 }) 
-                .attr("class", function(d){
-                    for(var i = 0; i < upNext.length; i++)
+                .on('mouseover', function(e, d){ 
+                    var nextWfrID;
+
+                    for(var i = 0; i < upNextLocs.length; i++)
                     {
-                        if(upNext[i].parentMod == d.name)
+                        if(d.name == upNextLocs[i].target.split(".")[0])
                         {
-                            return "upNext";
+                            nextWfrID =  upNextLocs[i].workflowRunID;
                         }
-
-                        return "resting";
                     }
-                })
-                .on('mouseover', function(e, d){
-                    if(d3.select(this).attr("class") == "upNext")
-                    {
-                        var wfRunID = d3.select(this).attr("id");
-
-                        d3.selectAll("#" + wfRunID).transition()
+                    d3.selectAll("#" + nextWfrID).transition()
                         .duration('50')
-                        .attr("stroke-width", 2.5);
-                    }
-                })
+                        .attr("stroke-width", 2.5);})
                 .on('mouseout',function(e, d){
-                    if(d3.select(this).attr("class") == "upNext")
-                    {
-                        var wfRunID = d3.select(this).attr("id");
+                    var nextWfrID;
 
-                        d3.selectAll("#" + wfRunID).transition()
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
                         .duration('50')
                         .attr("stroke-width", 1);
-                    }
                 });
+
             
             // Add text - Module Name
             topRowSVG.append("text")
@@ -1445,18 +1354,198 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("y", padding * 2)
                 .attr("text-anchor", "start")
                 .attr("dy", "0em")
+                .style("font-size", textSize)
                 .text(function(d) { return d.name; })
-                .attr("font-size","12px")
-                .attr('id',function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
-                .on('mouseover', function(e, d){
-                    d3.selectAll("#" + d.workflowRunID).transition()
-                        .duration('50');})
-                .on('mouseout', function(e, d){
-                    d3.selectAll("#" + d.workflowRunID).transition()
-                        .duration('50'); });
+                .attr('id', function(d) {
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            return upNextLocs[i].workflowRunID;
+                        }
+                    }
+                }) 
+                .on('mouseover', function(e, d){ 
+                    var nextWfrID;
 
-            topRowSVG.lower();
-            locationSVG.raise();
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 2.5);})
+                .on('mouseout',function(e, d){
+                    var nextWfrID;
+
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 1);
+                });
+
+            // Add text - WorkflowRunID
+            topRowSVG.append("text")
+                .attr("x", padding)
+                .attr("y", padding * 2)
+                .attr("text-anchor", "start")
+                .style("font-size", textSize)
+                .attr("dy", "1em")
+                .text(function(d) {
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            return upNextLocs[i].workflowRunID;
+                        }
+                    }
+                })
+                .attr('id', function(d) {
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            return upNextLocs[i].workflowRunID;
+                        }
+                    }
+                }) 
+                .on('mouseover', function(e, d){ 
+                    var nextWfrID;
+
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 2.5);})
+                .on('mouseout',function(e, d){
+                    var nextWfrID;
+
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 1);
+                });
+            
+            // Draw location Glyphs for modules
+            svg.selectAll("g")
+                .exit()
+                .data(locations)
+                .enter()
+                .append("g")
+                .attr("class", "location")
+
+            var locationSVG = svg.selectAll(".location");
+
+            locationSVG.append("circle")
+                .attr("cx", function(d, i)
+                {
+                    if(locInfo[i].name == d.name)
+                    {
+                        return locInfo[i].x
+                    }
+                    return 0;
+                })
+                .attr("cy", function(d, i)
+                {
+                    if(locInfo[i].name == d.name)
+                    {
+                        return locInfo[i].y;
+                    }
+                    return 0;
+                })
+                .attr("r", locRadius)
+                .attr('stroke', 'black')
+                .attr('stroke-width', function(d, i){
+                    var nextWfrID = null;
+
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target)
+                        {
+                            nextWfrID = upNextLocs[i].workflowRunID;
+                        }
+
+                        if(d.name == upNextLocs[i].source)
+                        {
+                            return 3;
+                        }
+                    }
+
+                    if(nextWfrID == null)
+                    {
+                        return 1;
+                    }
+
+                    else
+                    {
+                        return 3;
+                    }
+                })
+                .attr("fill", "white")  
+                .attr('id', function(d) {
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            return upNextLocs[i].workflowRunID;
+                        }
+                    }
+                }) 
+                .attr("class", function(d){ d.name })
+                .on('mouseover', function(e, d){ 
+                    var nextWfrID;
+
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 2.5);})
+                .on('mouseout',function(e, d){
+                    var nextWfrID;
+
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 1);
+                });
+
+            //If a location is the source of a transfer, highlight it
+            /*
+            for(var i = 0; i < locInfo.length; i++)
+            {
+                if(locInfo[i].isTransfer)
+            }*/
 
             // BOTTOM ROW
             svg.selectAll("g")
@@ -1481,64 +1570,172 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr('stroke-width', 1)
                 .attr("fill", "white")  
                 .attr('id', function(d) {
-                    for(var i = 0; i < upNext.length; i++)
-                    {
-                        for(var i = 0; i < upNextLocs.length; i++)
-                        {
-                            if(upNextLocs[i].target == d.name)
-                            {
-                                return upNextLocs[i].workflowRunID;
-                            }
-    
-                            return "resting";
-                        }
-                    } 
-                }) 
-                .attr("class", function(d){
                     for(var i = 0; i < upNextLocs.length; i++)
                     {
-                        if(upNextLocs[i].target == d.name)
+                        if(d.name == upNextLocs[i].target.split(".")[0])
                         {
-                            return "upNext";
+                            return upNextLocs[i].workflowRunID;
                         }
-
-                        return "resting";
                     }
-                })
-                .on('mouseover', function(e, d){
-                    if(d3.select(this).attr("class") == "upNext")
-                    {
-                        var wfRunID = d3.select(this).attr("id");
+                }) 
+                .on('mouseover', function(e, d){ 
+                    var nextWfrID;
 
-                        d3.selectAll("#" + wfRunID).transition()
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
                         .duration('50')
-                        .attr("stroke-width", 2.5);
-                    }
-                })
+                        .attr("stroke-width", 2.5);})
                 .on('mouseout',function(e, d){
-                    if(d3.select(this).attr("class") == "upNext")
-                    {
-                        var wfRunID = d3.select(this).attr("id");
+                    var nextWfrID;
 
-                        d3.selectAll("#" + wfRunID).transition()
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
                         .duration('50')
                         .attr("stroke-width", 1);
-                    }
                 });
-
-        
+   
             // Add text - Module Name
             bottomRowSVG.append("text")
                 .attr("x", padding)
-                .attr("y", moduleHeight - (padding))
+                .attr("y", moduleHeight - (padding * 2.5))
                 .attr("text-anchor", "start")
-                .attr("font-size","12px")
                 .attr("dy", "0em")
+                .style("font-size", textSize)
                 .text(function(d) { return d.name; })
+                .attr('id', function(d) {
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            return upNextLocs[i].workflowRunID;
+                        }
+                    }
+                }) 
+                .on('mouseover', function(e, d){ 
+                    var nextWfrID;
 
-            // If there is a transfer step happening, draw transfer module location
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 2.5);})
+                .on('mouseout',function(e, d){
+                    var nextWfrID;
 
-            // Draw Links
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 1);
+                });
+
+
+            // Add text - WorkflowRunID
+            bottomRowSVG.append("text")
+                .attr("x", padding)
+                .attr("y", moduleHeight - (padding * 2.5))
+                .attr("text-anchor", "start")
+                .attr("dy", "1em")
+                .style("font-size", textSize)
+                .text(function(d) {
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            return upNextLocs[i].workflowRunID;
+                        }
+                    }
+                })
+                .attr('id', function(d) {
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            return upNextLocs[i].workflowRunID;
+                        }
+                    }
+                }) 
+                .on('mouseover', function(e, d){ 
+                    var nextWfrID;
+
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 2.5);})
+                .on('mouseout',function(e, d){
+                    var nextWfrID;
+
+                    for(var i = 0; i < upNextLocs.length; i++)
+                    {
+                        if(d.name == upNextLocs[i].target.split(".")[0])
+                        {
+                            nextWfrID =  upNextLocs[i].workflowRunID;
+                        }
+                    }
+                    d3.selectAll("#" + nextWfrID).transition()
+                        .duration('50')
+                        .attr("stroke-width", 1);
+                });
+
+            // Check if any of the upNext steps are transfer steps
+            for(var i = 0; i < upNextLocs.length; i++)
+            {
+                if(upNextLocs[i].target.split(".")[1] == "transfer")
+                {
+                    svg.append("circle")
+                        .attr("cx", transferInfo[i].x)
+                        .attr("cy", transferInfo[i].y)
+                        .attr("r", locRadius/2)
+                        .attr("fill", "black")
+                        .attr("stroke", "black")
+                        .attr("stroke-width", 3)
+                        .attr("class", "transferLocation")
+                }
+            }
+
+            // Create arrow marker
+            svg
+                .append('defs')
+                .append('marker')
+                .attr('id', 'arrow')
+                .attr('viewBox', [0, 0, markerBoxWidth, markerBoxHeight])
+                .attr('refX', refX)
+                .attr('refY', refY)
+                .attr('markerWidth', markerBoxWidth)
+                .attr('markerHeight', markerBoxHeight)
+                .attr('orient', 'auto-start-reverse')
+                .append('path')
+                .attr('d', d3.line()(arrowPoints))
+                .attr('stroke', 'black');
+
             if(bottomRowModules.length > 1)
             {
                 svg.selectAll("g")
@@ -1549,68 +1746,58 @@ document.addEventListener("DOMContentLoaded", function () {
                     .attr("class", "allLink")
 
                 var linksSVG = svg.selectAll(".allLink");
-   
+
                 linksSVG.append("line")
-                    .attr("x1", function(d) { 
-                        return d.x; 
-                    })
-                    .attr("y1", function(d) { 
-                        return d.y; 
-                    })
-                    .attr("x2", transferInfo[0].x)
-                    .attr("y2", transferInfo[0].y)
-                    .attr('stroke', "black")
-                    .attr("stroke-width", function(d){
-                        for(var i = 0; i < upNextLocs.length; i++)
-                        {
-                            if(d.name == upNextLocs[i].source)
-                            {
-                                return 2;
-                            }
-                            else if(d.name == upNextLocs[i].target)
-                            {
-                                return 2;
-                            }
-                        }
-                        return 0;
-                    }) 
-                    .attr("class", function(d){
-                        for(var i = 0; i < upNextLocs.length; i++)
-                        {
-                            if(d.name == upNextLocs[i].source)
-                            {
-                                return "source"
-                            }
-                            else if(d.name == upNextLocs[i].target)
-                            {
-                                return "target";
-                            }
-                        }
-                        return "rest";
-                    })
-                    .attr('id', function(d) { return d.name + "line"})
+                    .attr("x1", function(d) { return d.x})
+                    .attr("y1", function(d) { return d.y})
+                    .attr("x2", transferInfo[0].x )
+                    .attr("y2", transferInfo[0].y )
+                    .attr('stroke', "gray")
+                    .attr("stroke-width", 0) 
+                    .attr("class", "rest")
+                    .attr('id', function(d) { return d.name })
 
-                svg
-                    .append('defs')
-                    .append('marker')
-                    .attr('id', 'arrow')
-                    .attr('viewBox', [0, 0, markerBoxWidth, markerBoxHeight])
-                    .attr('refX', refX)
-                    .attr('refY', refY)
-                    .attr('markerWidth', markerBoxWidth)
-                    .attr('markerHeight', markerBoxHeight)
-                    .attr('orient', 'auto-start-reverse')
-                    .append('path')
-                    .attr('d', d3.line()(arrowPoints))
-                    .attr('stroke', 'black');
 
-                
+                for(var i = 0; i < upNextLocs.length; i++)
+                {
+                    for(var j = 0; j < locInfo.length; j++)
+                    {
+                        if(upNextLocs[i].target == locInfo[j].name)
+                        {
+                            svg.append("line")
+                                .attr("x1", locInfo[j].x)
+                                .attr("y1", locInfo[j].y)
+                                .attr("x2", transferInfo[0].x )
+                                .attr("y2", transferInfo[0].y )
+                                .attr('stroke', "black")
+                                .attr("stroke-width", 2) 
+                                .attr("class", "target")
+                                .attr('id', function(d) { locInfo[j].name })  
+                        }
+
+                        if(upNextLocs[i].source == locInfo[j].name)
+                        {
+                            svg.append("line")
+                            .attr("x1", locInfo[j].x)
+                            .attr("y1", locInfo[j].y)
+                            .attr("x2", transferInfo[0].x )
+                            .attr("y2", transferInfo[0].y )
+                            .attr('stroke', "black")
+                            .attr("stroke-width", 2) 
+                            .attr("class", "source")
+                            .attr('id', function(d) { locInfo[j].name })   
+                        }
+                    } 
+                }               
+                    
                 d3.selectAll(".source")
                     .attr('marker-end', 'url(#arrow)')
 
                 d3.selectAll(".target")
                     .attr('marker-start', 'url(#arrow)')
 
+                d3.selectAll(".rest")
+                    .style("stroke-dasharray", ("3, 3"))
 
                 d3.selectAll("#transferLinks")
                     .on("click", function(e,d)
@@ -1620,6 +1807,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             d3.selectAll(".rest").transition()
                                 .duration('100')
                                 .attr("stroke-width", 2)
+                                
                         }
                         else
                         {
@@ -1627,14 +1815,15 @@ document.addEventListener("DOMContentLoaded", function () {
                             d3.selectAll(".rest").transition()
                                 .duration('100')
                                 .attr("stroke-width", 0)
-
                         }
                     })
+
+                d3.selectAll(".transferLocation").raise();
             }
+    
         }
 
         //** Create plots **//
-        //createModuleStatus("module-status");
         createModuleStatusNetwork("module-status");
         createWorkflowQueue("workflow-queue");
         createFutureState("future-state");
