@@ -56,8 +56,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const statusLineColor = d3.scaleOrdinal().domain(allStatus)
             .range(["black", "black", "black", "black", "black", "black", "black", "gray", "gray", "white", "white", "black", "black"])
+            
+        // Colors to distinguish WFR_ID in Future State chart
+        const futureColorMap = d3.scaleLinear()
+            .domain(d3.ticks(0, workflows.length, 2))
+            .range(["coral", "paleturquoise"]);
 
-        
+
         //** Panel Plots helper functions **//
         function getParentBounds(panelName)
         {
@@ -204,6 +209,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         target = currentStep.locations.target;
                         source = currentStep.locations.source;
 
+                        //If there is a null here, it means there is only one location
                         if(target == null || source == null)
                         {
                             isTransfer = false;
@@ -286,7 +292,75 @@ document.addEventListener("DOMContentLoaded", function () {
             return transferInfo;
         }
 
-        // Functions to draw panel plots
+        function createNextStepLocationInfo(locInfo, upNextLocs)
+        {
+            for(var i = 0; i < locInfo.length; i++)
+            {
+                var step_num = null;
+
+                var target = null;
+                var source = null;
+
+                var nextWfrID;
+
+                //For every workflow
+                for(var j = 0; j < workflows.length; j++)
+                {
+                    //Match location with its workflow if it has one
+                    if(locations[i].workflowRunID == workflows[j].workflowRunID)
+                    {
+                        step_num = workflows[j].step_index + 1;
+
+                        //if either locations in this step == module name, its a transfer
+                        var nextStep = workflows[j].steps[workflows[j].step_index + 1];
+
+                        target = nextStep.locations.target;
+                        source = nextStep.locations.source;
+
+                        if(target == null || source == null)
+                        {
+                            isTransfer = false;
+                        }
+                        else
+                        {
+                            isTransfer = true;
+                            
+                            if(locations[i].name == target)
+                            {
+                                targetOrSource = "target";
+                            }
+                            else if(locations[i].name == source)
+                            {
+                                targetOrSource = "source";
+                            }
+                            else{
+                                targetOrSource = null;
+                            }
+                        }
+                    }
+                }
+                
+                for(var j = 0; j < upNextLocs.length; j++)
+                {
+                    if(locInfo[i].name == upNextLocs[j].target)
+                    {
+                        nextWfrID = upNextLocs[j].workflowRunID;
+                    }
+                }
+
+                locInfo[i].stepNum = step_num;
+                locInfo[i].isTransferStep = isTransfer;
+                locInfo[i].targetOrSource = targetOrSource;
+                locInfo[i].target = target;
+                locInfo[i].source = source;
+                locInfo[i].workflowRunID = nextWfrID;
+            }
+
+            return locInfo;
+        }
+
+
+        /** PANELS **/
         function createModuleStatusNetwork(panelName)
         {
             // Create SVG size of parent div
@@ -949,19 +1023,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
+    
             var totalStepNum = steps.length;
-
             var [boxHeight, boxWidth] = [height/moduleNum, (width-(100+padding))/totalStepNum]; 
 
-        
-            var BGColorMap = d3.scaleLinear()
+            // Darken first column of chart to indicate it is the current step
+            const BGColorMap = d3.scaleLinear()
                 .domain([0,totalStepNum/2])
                 .range(["lightgray", "white"]);
-                
-            // Colors to distinguish WFR_ID
-            var ganttColorMap = d3.scaleLinear()
-                .domain(d3.ticks(0, workflows.length, 2))
-                .range(["coral", "paleturquoise"]);
 
             
             // Initialize cells of chart
@@ -1020,6 +1089,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .attr('id', function(d) {return d.workflowRunID}) 
 
             //Fill in Gantt Chart
+            //For every workflow, add steps to chart
             for(var i = 0; i < workflows.length; i++)
             {
                 var nowSteps = workflows[i].steps.slice(workflows[i].step_index);
@@ -1027,6 +1097,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 var x = null;
                 var y = null;
 
+                //For each step, find lowest free cell for its module
                 for(var j = 0; j < nowSteps.length; j++)
                 {
                     var currentModule = nowSteps[j].module_name;
@@ -1043,9 +1114,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
                             if(cells[k].occupied == true)
                             {
-                                //find next available cell for this module
                                 var myModuleIndices = [];
 
+                                //find indices for relevant module
                                 for(var l = 0; l < cells.length; l++)
                                 {
                                     if(cells[l].id.split('-')[0] == currentModule)
@@ -1054,6 +1125,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     }
                                 }
 
+                                //find next available cell for this module
                                 for(var l = 0; l < myModuleIndices.length; l++)
                                 {
                                     if(cells[myModuleIndices[l]].occupied == false)
@@ -1077,7 +1149,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
 
                     d3.select("." + currentModuleCellID)
-                        .attr("fill", ganttColorMap(i))
+                        .attr("fill", futureColorMap(i))
                         .attr("id", workflows[i].workflowRunID)
 
                     //Add label
@@ -1092,9 +1164,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
 
+            //Add hover to select workflowRunID functionality
             svg.selectAll("rect")
                 .on('mouseover', function(e, d){
-                                d3.selectAll("#" + d3.select(this).attr("id")).transition()
+                    d3.selectAll("#" + d3.select(this).attr("id")).transition()
                         .duration('50')
                         .attr("stroke-width", 2.5);})
                 .on('mouseout', function(e, d){
@@ -1113,74 +1186,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     .attr("stroke-width", 1) });
 
         }
-
-        function createNextStepLocationInfo(locInfo, upNextLocs)
-        {
-            for(var i = 0; i < locInfo.length; i++)
-            {
-                var step_num = null;
-
-                var target = null;
-                var source = null;
-
-                var nextWfrID;
-
-                //For every workflow
-                for(var j = 0; j < workflows.length; j++)
-                {
-                    //Match location with its workflow if it has one
-                    if(locations[i].workflowRunID == workflows[j].workflowRunID)
-                    {
-                        step_num = workflows[j].step_index + 1;
-
-                        //if either locations in this step == module name, its a transfer
-                        var nextStep = workflows[j].steps[workflows[j].step_index + 1];
-
-                        target = nextStep.locations.target;
-                        source = nextStep.locations.source;
-
-                        if(target == null || source == null)
-                        {
-                            isTransfer = false;
-                        }
-                        else
-                        {
-                            isTransfer = true;
-                            
-                            if(locations[i].name == target)
-                            {
-                                targetOrSource = "target";
-                            }
-                            else if(locations[i].name == source)
-                            {
-                                targetOrSource = "source";
-                            }
-                            else{
-                                targetOrSource = null;
-                            }
-                        }
-                    }
-                }
-                
-                for(var j = 0; j < upNextLocs.length; j++)
-                {
-                    if(locInfo[i].name == upNextLocs[j].target)
-                    {
-                        nextWfrID = upNextLocs[j].workflowRunID;
-                    }
-                }
-
-                locInfo[i].stepNum = step_num;
-                locInfo[i].isTransferStep = isTransfer;
-                locInfo[i].targetOrSource = targetOrSource;
-                locInfo[i].target = target;
-                locInfo[i].source = source;
-                locInfo[i].workflowRunID = nextWfrID;
-            }
-
-            return locInfo;
-        }
-
 
         function createFutureMap(panelName) 
         {
