@@ -394,6 +394,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 transferInfo = getTransferModuleCoords(bottomRowModules, boxWidth, height, boxHeight, centerPaddingBottom, locRadius);
             }
 
+            var tooltip = d3.select("body").append("div")
+                            .attr("class", "tooltip")
+                            .style("opacity", 0);
+
             //** DRAW TOP ROW **//
             // Create module block for each module
             svg.selectAll("g").remove();
@@ -497,7 +501,20 @@ document.addEventListener("DOMContentLoaded", function () {
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50'); });
 
-    
+            topRowSVG.on('mouseover', function(e, d){
+                tooltip.transition()
+                        .duration(200)
+                        .style("opacity", .9);
+                tooltip.html("WorkflowRunID: " + d.workflowRunID)
+                        .style("left", (e.pageX) + "px")
+                        .style("top", (e.pageY - 28) + "px");
+                    })
+                    .on('mouseout', function(d){
+                    tooltip.transition()
+                            .duration(500)
+                            .style("opacity", 0);
+                });
+            
             // Draw location Glyphs for modules
             svg.selectAll("g")
                 .exit()
