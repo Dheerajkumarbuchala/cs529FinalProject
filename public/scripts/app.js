@@ -360,6 +360,17 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
 
+        function calculateArrowPosition(d) {
+            // Assuming the arrow is centered within the element
+            var arrowWidth = 10; // Adjust this based on your arrow's width
+            var arrowHeight = 5; // Adjust this based on your arrow's height
+        
+            var x = -(arrowWidth / 2); // Center the arrow horizontally
+            var y = arrowHeight; // Offset vertically, adjust as needed
+        
+            return { x, y };
+        }        
+
         /** PANELS **/
         function createModuleStatusNetwork(panelName)
         {
@@ -502,12 +513,15 @@ document.addEventListener("DOMContentLoaded", function () {
                         .duration('50'); });
 
             topRowSVG.on('mouseover', function(e, d){
+                var arrowPosition = calculateArrowPosition(d);
+                var [pos1, pos2] = d3.pointer(e);
+                console.log("Arrow Position : ", pos1);
                 tooltip.transition()
                         .duration(200)
                         .style("opacity", .9);
                 tooltip.html("WorkflowRunID: " + d.workflowRunID)
-                        .style("left", (e.pageX) + "px")
-                        .style("top", (e.pageY - 28) + "px");
+                        .style("left", (pos1) + "px")
+                        .style("top", (pos2) + "px");
                     })
                     .on('mouseout', function(d){
                     tooltip.transition()
