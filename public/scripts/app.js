@@ -35,6 +35,7 @@ const arrowPoints = [[0, 0], [0, 5], [5, 2]];
 
 // D3 functional variables
 let clicked = false;
+let selectedBoxItem = null;
 
 document.addEventListener("DOMContentLoaded", function () {
     fetchDataPromise.then((processedData) => {
@@ -814,6 +815,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         }
         
+        var currentlyExpandedItem = null;
+
         function createWorkflowQueue(panelName) {
             
             // Get number of data items to draw
@@ -826,6 +829,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var [boxHeight, boxWidth] = [40, width - padding];
 
+            for(let i=0;i<3; i++){
+                svg.select(".workflowBox-"+i).remove()
+            }
+
             // Create status block for each workflowRunID
             svg.selectAll("g")
                 .data(workflows)
@@ -835,6 +842,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         return translateStr(padding, (boxHeight + (padding/2)) * i) });
             
             // Add rectangles for workflowRun item
+            
             svg.selectAll("g")
                 .append("rect")
                 .attr("rx", cornerRadius)
@@ -843,7 +851,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr('height', boxHeight)
                 .attr('stroke', 'black')
                 .style('fill', "white")
-                .attr("class", function(d, i) { return "workflowBox-" + i})
+                .attr("class", function(d, i) { return "workflowBox-" + i + " wfBox"})
                 .attr('id',function(d) {return d.workflowRunID}) 
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID)
@@ -853,29 +861,70 @@ document.addEventListener("DOMContentLoaded", function () {
                         .attr("stroke-width", 2.5);})
                 // Create dropdown on click
                 .on("click", function(e, d){
-                    clicked = !clicked;
-
                     var steps = d.steps;
                     var stepBoxHeight = 20;
                     var fullHeight = (steps.length * stepBoxHeight) + (steps.length * padding) + boxHeight;
 
                     var clickedItem = d3.select(this).attr('class');
                     var clickedItemID = parseInt(clickedItem.split('-')[1]);
+                    
+                    if(clickedItemID === selectedBoxItem){
+                        // Collapse the current
+                        d3.select(`.workflowBox-${clickedItemID}`)
+                            .attr("height", 40);
+                        d3.select(`rect.workflowBox-${clickedItemID}`)
+                            .attr("height", 40);
 
-                    //When WFRun item is clicked
-                    if(clicked){
+                        for(var i = 0; i < itemNum; i++)
+                        {
+                            console.log('Transulate string: ', translateStr(padding, ((boxHeight + (padding/2)) * i)))
+                            // Move succeeding workflowRun items back to original location
+                            d3.select(".workflowBox-" + i)
+                            .attr("transform", function(d, j) {
+                                return translateStr(padding, ((boxHeight + (padding/2)) * i))
+                            });
+                        }
 
-                        //Increase height to fit all steps
-                        d3.select(this).transition()
-                        .duration('50')
-                        .attr("height", fullHeight);
+                        d3.selectAll(".step-box").remove();
+                        selectedBoxItem = null;
+                        
+                    }
+                    else{
+                        if(selectedBoxItem !== null){
+                            // Collaple selectedBoxItem
+                            console.log("Collapsing: ", d3.select(`.workflowBox-${selectedBoxItem}`))
+                            d3.select(`.workflowBox-${selectedBoxItem}`)
+                                .attr("height", 40);
+                            
+                            d3.select(`rect.workflowBox-${selectedBoxItem}`)
+                                .attr("height", 40);
 
+                            for(var i = 0; i < 3; i++)
+                            {
+                                console.log('Transulate string: ', translateStr(padding, ((boxHeight + (padding/2)) * i)))
+                                // Move succeeding workflowRun items back to original location
+                                d3.select(".workflowBox-" + i)
+                                .attr("transform", function(d, j) {
+                                    return translateStr(padding, ((boxHeight + (padding/2)) * i))
+                                });
+                            }
+
+                            d3.selectAll(".step-box").remove();
+                            
+                            
+                        }
+                        // Expand clickedItem
+                        d3.select(`.workflowBox-${clickedItemID}`)
+                            .attr("height", fullHeight);
+                        
+                        d3.select(`rect.workflowBox-${clickedItemID}`)
+                            .attr("height", fullHeight);
+                        
                         // Move workflowRun items below the expanded workflow
                         for(var i = clickedItemID + 1; i < itemNum; i++)
                         {
                             //console.log("affect box .workflowBox-" + i );
-                            d3.select(".workflowBox-" + i).transition()
-                            .duration("50")
+                            d3.select(".workflowBox-" + i)
                             .attr("transform", function(d, j) {
                                 var [x,y] = getXYFromTranslate(d3.select(".workflowBox-" + i).attr("transform"));                            
                                 return translateStr( x, y + (fullHeight-boxHeight))});
@@ -916,29 +965,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             })
                             .text(function(d, i) { return steps[i].step_name; })
 
-
-
+                        selectedBoxItem = clickedItemID
                     }
-                    if(!clicked)
-                    {
-                        // Collapse workflowRun item
-                        d3.select(this).transition()
-                        .duration('50')
-                        .attr("height", boxHeight);
-
-                        for(var i = clickedItemID; i <= itemNum; i++)
-                        {
-                            // Move succeeding workflowRun items back to original location
-                            d3.select(".workflowBox-" + i).transition()
-                            .duration("50")
-                            .attr("transform", function(d, j) {
-                                return translateStr(padding, ((boxHeight + (padding/2)) * i))
-                            });
-                        }
-
-                        d3.selectAll(".step-box").remove();
-                        
-                    }
+                
                 })
                 .on('mouseout', function(e, d){
                     d3.selectAll("#" + d.workflowRunID)
@@ -947,7 +976,98 @@ document.addEventListener("DOMContentLoaded", function () {
                         .duration('50')
                         .attr("stroke-width", 1);
                 })
+            function closeDropdown(itemID) {
+                // Collapse workflowRun item if it's expanded
+                if (clickedItemID) {
+                    d3.select(".workflowBox-" + clickedItemID).transition()
+                        .duration('50')
+                        .attr("height", boxHeight);
 
+                    for (var i = clickedItemID; i <= itemNum; i++) {
+                        // Move succeeding workflowRun items back to the original location
+                        d3.select(".workflowBox-" + i).transition()
+                            .duration("50")
+                            .attr("transform", function(d, j) {
+                                return translateStr(padding, ((boxHeight + (padding / 2)) * i))
+                            });
+                    }
+
+                    d3.selectAll(".step-box").remove();
+                }
+
+                clickedItemID = null; // Reset the currently clicked item
+            }
+
+            function expandItem(itemData) {
+                // Increase height to fit all steps
+                d3.select(this).transition()
+                    .duration('50')
+                    .attr("height", fullHeight);
+        
+                // Move workflowRun items below the expanded workflow
+                for (var i = clickedItemID + 1; i < itemNum; i++) {
+                    d3.select(".workflowBox-" + i).transition()
+                        .duration("50")
+                        .attr("transform", function (d, j) {
+                            var [x, y] = getXYFromTranslate(d3.select(".workflowBox-" + i).attr("transform"));
+                            return translateStr(x, y + (fullHeight - boxHeight));
+                        });
+                }
+        
+                // Show steps within Workflow
+                for (var i = 0; i < steps.length; i++) {
+                    d3.select(".workflowBox-" + (clickedItemID))
+                        .append("g")
+                        .attr("class", "step-box");
+                }
+        
+                // Add rectangle to show step, color by status
+                d3.selectAll(".step-box")
+                    .attr("transform", function (d, i) {
+                        return translateStr(boxWidth / 4, boxHeight + ((stepBoxHeight + (padding / 2)) * i));
+                    })
+                    .append("rect")
+                    .attr("height", stepBoxHeight)
+                    .attr("width", boxWidth / 2)
+                    .attr("rx", cornerRadius)
+                    .attr("ry", cornerRadius)
+                    .attr("stroke", function (d, i) {
+                        return statusLineColor(steps[i].status);
+                    })
+                    .attr('fill', function (d, i) {
+                        return statusColor(steps[i].status);
+                    });
+        
+                // Add text - step number and status
+                d3.selectAll(".step-box")
+                    .append("text")
+                    .attr("x", boxWidth / 4)
+                    .attr("y", stepBoxHeight / 2)
+                    .attr("text-anchor", "middle")
+                    .attr("dy", ".35em")
+                    .attr("fill", function (d, i) {
+                        return statusLineColor(steps[i].status);
+                    })
+                    .text(function (d, i) { return steps[i].step_name; });
+            }
+        
+            function collapseItem(itemData) {
+                // Collapse workflowRun item
+                d3.select(this).transition()
+                    .duration('50')
+                    .attr("height", boxHeight);
+        
+                for (var i = clickedItemID; i <= itemNum; i++) {
+                    // Move succeeding workflowRun items back to original location
+                    d3.select(".workflowBox-" + i).transition()
+                        .duration("50")
+                        .attr("transform", function (d, j) {
+                            return translateStr(padding, ((boxHeight + (padding / 2)) * i));
+                        });
+                }
+        
+                d3.selectAll(".step-box").remove();
+            }
 
             // Add status marker
             svg.selectAll("g")
