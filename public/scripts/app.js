@@ -60,8 +60,8 @@ document.addEventListener("DOMContentLoaded", function () {
             
         // Colors to distinguish WFR_ID in Future State chart
         const futureColorMap = d3.scaleLinear()
-            .domain(d3.ticks(0, workflows.length, 2))
-            .range(["coral", "paleturquoise"]);
+            .domain(d3.ticks(0, workflows.length, 3))
+            .range(["coral", "darkseagreen", "paleturquoise"]);
 
 
         //** Panel Plots helper functions **//
@@ -473,6 +473,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("y", padding * 2)
                 .attr("text-anchor", "start")
                 .attr("dy", "0em")
+                .attr("font-weight", 700)
                 .text(function(d) { return d.name; })
                 .attr('id',function(d) {return d.workflowRunID})
                 .on('mouseover', function(e, d){
@@ -650,6 +651,7 @@ document.addEventListener("DOMContentLoaded", function () {
             bottomRowSVG.append("text")
                 .attr("x", padding)
                 .attr("y", moduleHeight - (padding * 2.5))
+                .attr("font-weight", 700)
                 .attr("text-anchor", "start")
                 .attr("dy", "0em")
                 .text(function(d) { return d.name; })
@@ -1004,7 +1006,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("y", boxHeight/2)
                 .attr("text-anchor", "start")
                 .attr("dy", ".35em")
-                .text(function(d) { return d.name; })
+                .text(function(d) { return d.workflowRunID + ": " + d.name; })
                 .attr('id', function(d) {return d.workflowRunID}) //assign a class name == workflowrunID
                 .on('mouseover', function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
@@ -1143,6 +1145,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .attr("y", boxHeight/2)
             .attr("text-anchor", "middle")
             .attr("dy", ".35em")
+            .attr("font-weight", 700)
             .text(function(d) { return d.name; })
             .attr('id', function(d) {return d.workflowRunID}) 
 
@@ -1417,6 +1420,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("y", padding * 2)
                 .attr("text-anchor", "start")
                 .attr("dy", "0em")
+                .attr("font-weight", 700)
                 .style("font-size", textSize)
                 .text(function(d) { return d.name; })
                 .attr('id', function(d) {
@@ -1675,6 +1679,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("y", moduleHeight - (padding * 2.5))
                 .attr("text-anchor", "start")
                 .attr("dy", "0em")
+                .attr("font-weight", 700)
                 .style("font-size", textSize)
                 .text(function(d) { return d.name; })
                 .attr('id', function(d) {
