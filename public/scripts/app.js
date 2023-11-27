@@ -1082,7 +1082,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
     
-            var totalStepNum = steps.length;
+            var totalStepNum = 5;
             var [boxHeight, boxWidth] = [height/moduleNum, (width-(100+padding))/totalStepNum]; 
 
             // Darken first column of chart to indicate it is the current step

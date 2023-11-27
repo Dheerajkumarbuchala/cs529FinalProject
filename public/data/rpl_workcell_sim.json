@@ -59,7 +59,7 @@
       {
         "name": "New Plate",
         "workflowRunID": "wf_02",
-        "status": "failed",
+        "status": "running",
         "step_index": 0,
         "steps": [
           {
@@ -72,7 +72,7 @@
             },
             "module_name": "sciclops",
             "step_name": "Color Plate to Plate Exchange",
-            "status": "failed"
+            "status": "running"
           },
           {
             "action": "transfer",
@@ -117,6 +117,82 @@
             "step_name": "Move to trash"
           }
         ]
+      },
+      {
+        "name": "Reset Colors",
+        "workflowRunID": "wf_04",
+        "status": "running",
+        "step_index": 0,
+        "steps": [
+          {
+            "action": "drain_ink_all_motors",
+            "comment": null,
+            "workflowRunID": "wf_04",
+            "locations": {
+              "source": null,
+              "target": null
+            },
+            "module_name": "barty",
+            "step_name": "Drain Max Ink",
+            "status" : "running"
+          },
+          {
+            "action": "fill_ink_all_motors",
+            "comment": null,
+            "workflowRunID": "wf_04",
+            "locations": {
+              "source": null,
+              "target": null
+            },
+            "module_name": "barty",
+            "step_name": "Fill Max Ink",
+            "status" : "queued"
+          }
+        ]
+      },
+      {
+        "name": "Seal Plate",
+        "workflowRunID": "wf_05",
+        "status": "failed",
+        "step_index": 2,
+        "steps": [
+          {
+            "action": "run_protocol",
+            "comment": null,
+            "workflowRunID": "wf_05",
+            "locations": {
+              "source": null,
+              "target": "sealer.default"
+            },
+            "module_name": "sealer",
+            "step_name": "Seal",
+            "status" : "completed"
+          },
+          {
+            "action": "transfer",
+            "comment": null,
+            "workflowRunID": "wf_05",
+            "locations": {
+              "source": "sealer.default",
+              "target": "peeler.default"
+            },
+            "module_name": "pf400",
+            "step_name": "Move to Peeler",
+            "status" : "completed"
+          },
+          {
+            "action": "run_protocol",
+            "comment": null,
+            "workflowRunID": "wf_05",
+            "locations": {
+              "source": null,
+              "target": "peeler.default"
+            },
+            "module_name": "peeler",
+            "step_name": "Peel",
+            "status" : "failed"
+          }
+        ]
       }
     ],
     "modules": [
@@ -131,14 +207,14 @@
         "locations":["peeler.default"],
         "name": "peeler",
         "queue": [],
-        "status": "IDLE",
-        "workflowRunID": null
+        "status": "ERROR",
+        "workflowRunID": "wf_05"
       },
       {
         "locations":["sciclops.exchange"],
         "name": "sciclops",
         "queue": [],
-        "status": "ERROR",
+        "status": "BUSY",
         "workflowRunID": "wf_02"
       },
       {
@@ -166,8 +242,8 @@
         "locations":[],
         "name": "barty",
         "queue": [],
-        "status": "IDLE",
-        "workflowRunID": null
+        "status": "BUSY",
+        "workflowRunID": "wf_04"
       }
     ],
     "locations": [
