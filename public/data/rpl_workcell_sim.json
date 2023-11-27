@@ -88,7 +88,7 @@
           {
             "action": "take_picture",
             "comment": null,
-            "workflowRunID": "wf_01",
+            "workflowRunID": "wf_02",
             "locations": {
               "source": "camera.plate_station",
               "target": null
@@ -108,7 +108,7 @@
           {
             "action": "transfer",
             "comment": null,
-            "workflowRunID": "wf_01",
+            "workflowRunID": "wf_03",
             "locations": {
               "source": "camera.plate_station",
               "target": "wc.trash"
