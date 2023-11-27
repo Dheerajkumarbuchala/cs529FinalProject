@@ -900,7 +900,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             d3.select(`rect.workflowBox-${selectedBoxItem}`)
                                 .attr("height", 40);
 
-                            for(var i = 0; i < 5; i++)
+                            for(var i = 0; i < modules.length; i++)
                             {
                                 console.log('Transulate string: ', translateStr(padding, ((boxHeight + (padding/2)) * i)))
                                 // Move succeeding workflowRun items back to original location
