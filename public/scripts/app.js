@@ -408,15 +408,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // create a tooltip
             let tooltip = d3.select("#" + panelName)
-                .append("div")
-                .style("opacity", 0)
-                .attr("class", "tooltip")
-                .style("background-color", "lightgray")
-                .attr("text-anchor", "middle")
-                .style("border", "white")
-                .style("border-width", "2px")
-                .style("border-radius", "5px")
-                .style("padding", "5px")
+            .append("div")
+            .style("opacity", 0)
+            .attr("class", "tooltip")
+            .style("background-color", "lightgray")
+            .attr("text-anchor", "middle")
+            .style("border", "solid")
+            .style("border-color", "white")
+            .style("border-width", "2px")
+            .style("border-radius", "5px")
+            .style("padding", "5px")
 
             //** DRAW TOP ROW **//
             // Create module block for each module
@@ -934,14 +935,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var [boxHeight, boxWidth] = [40, width - padding];
 
-            // create a tooltip
             let tooltip = d3.select("#" + panelName)
             .append("div")
             .style("opacity", 0)
             .attr("class", "tooltip")
             .style("background-color", "lightgray")
             .attr("text-anchor", "middle")
-            .style("border", "white")
+            .style("border", "solid")
+            .style("border-color", "white")
             .style("border-width", "2px")
             .style("border-radius", "5px")
             .style("padding", "5px")
@@ -1234,6 +1235,20 @@ document.addEventListener("DOMContentLoaded", function () {
             // Get bounds for SVG canvas and data item elements
             var [height, width] = calculateHeightWidthSVG(svg);
 
+            // create a tooltip
+            let tooltip = d3.select("#" + panelName)
+            .append("div")
+            .style("opacity", 0)
+            .attr("class", "tooltip")
+            .style("background-color", "lightgray")
+            .style("font-size", "12px")
+            .attr("text-anchor", "middle")
+            .style("border", "solid")
+            .style("border-color", "white")
+            .style("border-width", "2px")
+            .style("border-radius", "5px")
+            .style("padding", "5px")
+
             //get all steps
             var steps = [];
 
@@ -1310,7 +1325,43 @@ document.addEventListener("DOMContentLoaded", function () {
             .enter().append("g")
             .attr("call", function(d) {return d.name})
             .attr("transform", function(d, i) { 
-                    return translateStr(padding, boxHeight*i)});
+                    return translateStr(padding, boxHeight*i)})
+            .on('mouseover', function(e, d){ 
+                let [x,y] = d3.pointer(e, d3.select(".container").node());
+
+                tooltip.transition()
+                .duration("50")
+                .style('opacity', 1)
+                .style("visibility", "visible")
+                .style("left", (x + 15) + "px")
+                .style("top", (y) + "px");
+            })
+            .on("mousemove", function(e, d){
+                let [x,y] = d3.pointer(e, d3.select(".container").node());
+
+                var text;
+
+                if(d.workflowRunID == null)
+                {
+                    text = d.name + " is currently " + d.status;
+                }   
+                else
+                {
+                    text = d.name + " is currently " + d.status + " for " + d.workflowRunID;
+                }
+
+                tooltip
+                .html(text)
+                .style("left", (x + 15) + "px")
+                .style("top", (y) + "px");
+            })
+            .on('mouseout',function(e, d){
+                tooltip
+                .transition()
+                .duration("50")
+                .style('opacity', 0)
+                .style("visibility", "hidden");
+            });
 
             // Add rectangles for module container
             svg.selectAll("g")
@@ -1397,6 +1448,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     d3.select("." + currentModuleCellID)
                         .attr("fill", futureColorMap(i))
                         .attr("id", workflows[i].workflowRunID)
+                        .attr("class", "filled")
 
                     //Add label
                     svg.append("text")
@@ -1413,23 +1465,87 @@ document.addEventListener("DOMContentLoaded", function () {
             //Add hover to select workflowRunID functionality
             svg.selectAll("rect")
                 .on('mouseover', function(e, d){
+                    if(d3.select(this).attr("class") == "filled")
+                    {
+                        let [x,y] = d3.pointer(e, d3.select(".container").node());
+
+                        tooltip.transition()
+                        .duration("50")
+                        .style('opacity', 1)
+                        .style("visibility", "visible")
+                        .style("left", (x + 15) + "px")
+                        .style("top", (y) + "px");
+                    }
+
                     d3.selectAll("#" + d3.select(this).attr("id")).transition()
                         .duration('50')
                         .attr("stroke-width", 2.5);})
+                .on("mousemove", function(e, d){
+                    if(d3.select(this).attr("class") == "filled")
+                    {
+                        let [x,y] = d3.pointer(e, d3.select(".container").node());
+    
+                        tooltip
+                        .html(d3.select(this).attr("id"))
+                        .style("left", (x + 15) + "px")
+                        .style("top", (y) + "px");
+                    }
+                })
                 .on('mouseout', function(e, d){
+                    if(d3.select(this).attr("class") == "filled")
+                    {
+                        tooltip
+                        .transition()
+                        .duration("50")
+                        .style('opacity', 0)
+                        .style("visibility", "hidden");
+                    }
+
                     d3.selectAll("#" + d3.select(this).attr("id")).transition()
                         .duration('50')
                         .attr("stroke-width", 1) });
 
             svg.selectAll("text")
-            .on('mouseover', function(e, d){
-                d3.selectAll("#" + d3.select(this).attr("id")).transition()
-                    .duration('50')
-                    .attr("stroke-width", 2.5);})
-            .on('mouseout', function(e, d){
-                d3.selectAll("#" + d3.select(this).attr("id")).transition()
-                    .duration('50')
-                    .attr("stroke-width", 1) });
+                .on('mouseover', function(e, d){
+                    if(d3.select(this).attr("class") == "filled")
+                    {
+                        let [x,y] = d3.pointer(e, d3.select(".container").node());
+
+                        tooltip.transition()
+                        .duration("50")
+                        .style('opacity', 1)
+                        .style("visibility", "visible")
+                        .style("left", (x + 15) + "px")
+                        .style("top", (y) + "px");
+                    }
+
+                    d3.selectAll("#" + d3.select(this).attr("id")).transition()
+                        .duration('50')
+                        .attr("stroke-width", 2.5);})
+                .on("mousemove", function(e, d){
+                    if(d3.select(this).attr("class") == "filled")
+                    {
+                        let [x,y] = d3.pointer(e, d3.select(".container").node());
+
+                        tooltip
+                        .html(d3.select(this).attr("id"))
+                        .style("left", (x + 15) + "px")
+                        .style("top", (y) + "px");
+                    }
+                })
+                .on('mouseout', function(e, d){
+                    if(d3.select(this).attr("class") == "filled")
+                    {
+                        tooltip
+                        .transition()
+                        .duration("50")
+                        .style('opacity', 0)
+                        .style("visibility", "hidden");
+                    }
+
+                    d3.selectAll("#" + d3.select(this).attr("id")).transition()
+                        .duration('50')
+                        .attr("stroke-width", 1) });
 
         }
 
@@ -1440,6 +1556,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Get bounds for SVG canvas and data item elements
             var [height, width] = calculateHeightWidthSVG(svg);
+
+            // Create tooltip
+            let tooltip = d3.select("#" + panelName)
+            .append("div")
+            .style("opacity", 0)
+            .attr("class", "tooltip")
+            .style("background-color", "lightgray")
+            .style("font-size", "12px")
+            .attr("text-anchor", "middle")
+            .style("border", "solid")
+            .style("border-color", "white")
+            .style("border-width", "2px")
+            .style("border-radius", "5px")
+            .style("padding", "5px")
 
             // Split modules for linking
             var [topRowModules, bottomRowModules] = getRowModules(modules);
@@ -1535,9 +1665,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             //console.log(upNextLocs);
 
-            console.log("old loc info: ", oldLocInfo);
+            //console.log("old loc info: ", oldLocInfo);
             locInfo = createNextStepLocationInfo(oldLocInfo, upNextLocs);
-            console.log("new loc info: ", locInfo);
+            //console.log("new loc info: ", locInfo);
 
             //** DRAW TOP ROW **//
             // Create module block for each module
