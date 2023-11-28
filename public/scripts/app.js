@@ -411,8 +411,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 .append("div")
                 .style("opacity", 0)
                 .attr("class", "tooltip")
-                .style("background-color", "white")
-                .style("border", "solid")
+                .style("background-color", "lightgray")
+                .attr("text-anchor", "middle")
+                .style("border", "white")
                 .style("border-width", "2px")
                 .style("border-radius", "5px")
                 .style("padding", "5px")
@@ -430,25 +431,27 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("transform", function(d, i) { 
                         return translateStr((boxWidth * i) + centerPaddingTop, padding)})
                 .on('mouseover', function(e, d){ 
-                    let [x,y] = d3.pointer(e, d3.select("#" + panelName).node());
+                    let [x,y] = d3.pointer(e, d3.select(".container").node());
 
                     tooltip.transition()
                     .duration("50")
                     .style('opacity', 1)
                     .style("visibility", "visible")
-                    .style("left", (x) + "px")
+                    .style("left", (x + 15) + "px")
                     .style("top", (y) + "px");
                 })
                 .on("mousemove", function(e, d){
-                    let [x,y] = d3.pointer(e, d3.select("#" + panelName).node());
+                    let [x,y] = d3.pointer(e, d3.select(".container").node());
 
                     tooltip
                     .html("Module: " + d.name + "<br>" + "Workflow: " + d.workflowRunID)
-                    .style("left", (x) + "px")
+                    .style("left", (x + 15) + "px")
                     .style("top", (y) + "px");
                 })
                 .on('mouseout',function(e, d){
                     tooltip
+                    .transition()
+                    .duration("50")
                     .style('opacity', 0)
                     .style("visibility", "hidden");
                 });
@@ -544,24 +547,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 .on('mouseout', function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50'); });
-
-            /*
-            topRowSVG.on('mouseover', function(e, d){
-                var arrowPosition = calculateArrowPosition(d);
-                var [pos1, pos2] = d3.pointer(e);
-                console.log("Arrow Position : ", pos1);
-                tooltip.transition()
-                        .duration(200)
-                        .style("opacity", .9);
-                tooltip.html("WorkflowRunID: " + d.workflowRunID)
-                        .style("left", (pos1) + "px")
-                        .style("top", (pos2) + "px");
-                    })
-                    .on('mouseout', function(d){
-                    tooltip.transition()
-                            .duration(500)
-                            .style("opacity", 0);
-                });*/
             
             // Draw location Glyphs for modules
             svg.selectAll("g")
@@ -572,6 +557,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("class", "location")
 
             var locationSVG = svg.selectAll(".location");
+
+            locationSVG
+                .on('mouseover', function(e, d){ 
+                let [x,y] = d3.pointer(e, d3.select(".container").node());
+
+                tooltip.transition()
+                .duration("50")
+                .style('opacity', 1)
+                .style("visibility", "visible")
+                .style("left", (x + 15) + "px")
+                .style("top", (y) + "px");
+            })
+            .on("mousemove", function(e, d){
+                let [x,y] = d3.pointer(e, d3.select(".container").node());
+
+                tooltip
+                .html("Location " + d.name + "<br>" + "is occupied by " + d.workflowRunID)
+                .style("left", (x + 15) + "px")
+                .style("top", (y) + "px");
+            })
+            .on('mouseout',function(e, d){
+                tooltip
+                .transition()
+                .duration("50")
+                .style('opacity', 0)
+                .style("visibility", "hidden");
+            });
 
             locationSVG.append("circle")
                 .attr("cx", function(d, i)
@@ -593,7 +605,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 .attr("r", locRadius)
                 .attr('stroke', 'black')
                 .attr('stroke-width', function(d, i){
-                    //NEEDS REWORK
                     //should check location status, not wfrID
                     if(d.workflowRunID == null)
                     {
@@ -606,6 +617,14 @@ document.addEventListener("DOMContentLoaded", function () {
                             if(locInfo[i].targetOrSource == "source")
                             {
                                 return 3; //Highlight loctions that are the source of a transfer
+                            }
+                            else if(locInfo[i].targetOrSource == "target")
+                            {
+                                return 1;
+                            }
+                            else
+                            {
+                                return 3;
                             }
                         }
                     }
@@ -633,7 +652,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var bottomRowSVG = svg.selectAll(".bottomModule")
                 .attr("transform", function(d, i) { 
-                        return translateStr((boxWidth * i) + centerPaddingBottom, padding + (height - boxHeight - padding))});
+                        return translateStr((boxWidth * i) + centerPaddingBottom, padding + (height - boxHeight - padding))})
+                .on('mouseover', function(e, d){ 
+                    let [x,y] = d3.pointer(e, d3.select(".container").node());
+
+                    tooltip.transition()
+                    .duration("50")
+                    .style('opacity', 1)
+                    .style("visibility", "visible")
+                    .style("left", (x + 15) + "px")
+                    .style("top", (y) + "px");
+                })
+                .on("mousemove", function(e, d){
+                    let [x,y] = d3.pointer(e, d3.select(".container").node());
+
+                    tooltip
+                    .html("Module: " + d.name + "<br>" + "Workflow: " + d.workflowRunID)
+                    .style("left", (x + 15) + "px")
+                    .style("top", (y) + "px");
+                })
+                .on('mouseout',function(e, d){
+                    tooltip
+                    .transition()
+                    .duration("50")
+                    .style('opacity', 0)
+                    .style("visibility", "hidden");
+                });
 
             
             bottomRowSVG.append("rect")
@@ -731,6 +775,9 @@ document.addEventListener("DOMContentLoaded", function () {
             {
                 if(transferInfo[i].workflowRunID != null)
                 {
+                    var name = transferInfo[i].name;
+                    var workflowRunID = transferInfo[i].workflowRunID;
+
                     svg.append("circle")
                         .attr("cx", transferInfo[i].x)
                         .attr("cy", transferInfo[i].y)
@@ -739,6 +786,31 @@ document.addEventListener("DOMContentLoaded", function () {
                         .attr("stroke", "black")
                         .attr("stroke-width", 3)
                         .attr("class", "transferLocation")
+                        .on('mouseover', function(e, d){ 
+                            let [x,y] = d3.pointer(e, d3.select(".container").node());
+        
+                            tooltip.transition()
+                            .duration("50")
+                            .style('opacity', 1)
+                            .style("visibility", "visible")
+                            .style("left", (x + 15) + "px")
+                            .style("top", (y) + "px");
+                        })
+                        .on("mousemove", function(e, d){
+                            let [x,y] = d3.pointer(e, d3.select(".container").node());
+        
+                            tooltip
+                            .html(name + " transferring plate for " + workflowRunID)
+                            .style("left", (x + 15) + "px")
+                            .style("top", (y) + "px");
+                        })
+                        .on('mouseout',function(e, d){
+                            tooltip
+                            .transition()
+                            .duration("50")
+                            .style('opacity', 0)
+                            .style("visibility", "hidden");
+                        });
                 }
 
             }
@@ -862,6 +934,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
             var [boxHeight, boxWidth] = [40, width - padding];
 
+            // create a tooltip
+            let tooltip = d3.select("#" + panelName)
+            .append("div")
+            .style("opacity", 0)
+            .attr("class", "tooltip")
+            .style("background-color", "lightgray")
+            .attr("text-anchor", "middle")
+            .style("border", "white")
+            .style("border-width", "2px")
+            .style("border-radius", "5px")
+            .style("padding", "5px")
+
             for(let i=0;i<3; i++){
                 svg.select(".workflowBox-"+i).remove()
             }
@@ -872,10 +956,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 .enter().append("g")
                 .attr("class", function(d, i) { return "workflowBox-" + i})
                 .attr("transform", function(d, i) { 
-                        return translateStr(padding, (boxHeight + (padding/2)) * i) });
+                        return translateStr(padding, (boxHeight + (padding/2)) * i) })
             
             // Add rectangles for workflowRun item
-            
             svg.selectAll("g")
                 .append("rect")
                 .attr("rx", cornerRadius)
@@ -894,6 +977,12 @@ document.addEventListener("DOMContentLoaded", function () {
                         .attr("stroke-width", 2.5);})
                 // Create dropdown on click
                 .on("click", function(e, d){
+                    tooltip
+                        .transition()
+                        .duration("50")
+                        .style('opacity', 0)
+                        .style("visibility", "hidden");
+
                     var steps = d.steps;
                     var stepBoxHeight = 20;
                     var fullHeight = (steps.length * stepBoxHeight) + (steps.length * padding) + boxHeight;
@@ -924,7 +1013,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                     else{
                         if(selectedBoxItem !== null){
-                            // Collaple selectedBoxItem
+                            // Collapse selectedBoxItem
                             console.log("Collapsing: ", d3.select(`.workflowBox-${selectedBoxItem}`))
                             d3.select(`.workflowBox-${selectedBoxItem}`)
                                 .attr("height", 40);
@@ -970,7 +1059,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 .append("g")
                                 .attr("class", "step-box")
                         }
-                        
+
                         // Add rectangle to show step, color by status
                         d3.selectAll(".step-box")
                             .attr("transform", function(d, i) { 
@@ -984,7 +1073,41 @@ document.addEventListener("DOMContentLoaded", function () {
                                 return statusLineColor(steps[i].status)
                             })
                             .attr('fill', function(d, i) {
-                                return statusColor(steps[i].status)});
+                                return statusColor(steps[i].status)})
+                            .attr("id", function(d, i) { 
+                                return (steps[i].action + "-" + steps[i].module_name + "-" + steps[i].status);
+                            })
+                            .on('mouseover', function(e, d){ 
+                                let [x,y] = d3.pointer(e, d3.select(".container").node());
+            
+                                tooltip.transition()
+                                .duration("50")
+                                .style('opacity', 1)
+                                .style("visibility", "visible")
+                                .style("left", (x + 15) + "px")
+                                .style("top", (y) + "px");
+                            })
+                            .on("mousemove", function(e, d){
+                                let [x,y] = d3.pointer(e, d3.select(".container").node());
+
+                                var text = d3.select(this).attr("id");
+                                var action = text.split("-")[0];
+                                var name = text.split("-")[1];
+                                var status = text.split("-")[2];
+            
+                                tooltip
+                                .html(action + " on " + name + ": " + status)
+                                .style("left", (x + 15) + "px")
+                                .style("top", (y) + "px");
+                            })
+                            .on('mouseout',function(e, d){
+                                tooltip
+                                .transition()
+                                .duration("50")
+                                .style('opacity', 0)
+                                .style("visibility", "hidden");
+                            });
+        
 
                         // Add text - step number and status
                         d3.selectAll(".step-box")
@@ -996,11 +1119,41 @@ document.addEventListener("DOMContentLoaded", function () {
                             .attr("fill", function(d,i){
                                 return statusLineColor(steps[i].status)
                             })
+                            .attr("id", function(d, i) { 
+                                return (steps[i].action + "-" + steps[i].module_name + "-" + steps[i].status);
+                            })
                             .text(function(d, i) { return steps[i].step_name; })
+                            .on('mouseover', function(e, d){ 
+                                let [x,y] = d3.pointer(e, d3.select(".container").node());
+            
+                                tooltip.transition()
+                                .duration("50")
+                                .style('opacity', 1)
+                                .style("visibility", "visible")
+                                .style("left", (x + 15) + "px")
+                                .style("top", (y) + "px");
+                            })
+                            .on("mousemove", function(e, d){
+                                let [x,y] = d3.pointer(e, d3.select(".container").node());
+
+                                var text = d3.select(this).attr("id");
+                                var action = text.split("-")[0];
+                                var name = text.split("-")[1];
+                                var status = text.split("-")[2];
+            
+                                tooltip
+                                .html(action + " on " + name + ": " + status)
+                            })
+                            .on('mouseout',function(e, d){
+                                tooltip
+                                .transition()
+                                .duration("50")
+                                .style('opacity', 0)
+                                .style("visibility", "hidden");
+                            });
 
                         selectedBoxItem = clickedItemID
-                    }
-                
+                    }                
                 })
                 .on('mouseout', function(e, d){
                     d3.selectAll("#" + d.workflowRunID)
