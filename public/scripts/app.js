@@ -406,9 +406,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 transferInfo = getTransferModuleCoords(bottomRowModules, boxWidth, height, boxHeight, centerPaddingBottom, locRadius);
             }
 
-            var tooltip = d3.select("body").append("div")
-                            .attr("class", "tooltip")
-                            .style("opacity", 0);
+            // create a tooltip
+            let tooltip = d3.select("#" + panelName)
+                .append("div")
+                .style("opacity", 0)
+                .attr("class", "tooltip")
+                .style("background-color", "white")
+                .style("border", "solid")
+                .style("border-width", "2px")
+                .style("border-radius", "5px")
+                .style("padding", "5px")
 
             //** DRAW TOP ROW **//
             // Create module block for each module
@@ -421,7 +428,30 @@ document.addEventListener("DOMContentLoaded", function () {
                  
             var topRowSVG = svg.selectAll(".topModule")
                 .attr("transform", function(d, i) { 
-                        return translateStr((boxWidth * i) + centerPaddingTop, padding)});
+                        return translateStr((boxWidth * i) + centerPaddingTop, padding)})
+                .on('mouseover', function(e, d){ 
+                    let [x,y] = d3.pointer(e, d3.select("#" + panelName).node());
+
+                    tooltip.transition()
+                    .duration("50")
+                    .style('opacity', 1)
+                    .style("visibility", "visible")
+                    .style("left", (x) + "px")
+                    .style("top", (y) + "px");
+                })
+                .on("mousemove", function(e, d){
+                    let [x,y] = d3.pointer(e, d3.select("#" + panelName).node());
+
+                    tooltip
+                    .html("Module: " + d.name + "<br>" + "Workflow: " + d.workflowRunID)
+                    .style("left", (x) + "px")
+                    .style("top", (y) + "px");
+                })
+                .on('mouseout',function(e, d){
+                    tooltip
+                    .style('opacity', 0)
+                    .style("visibility", "hidden");
+                });
 
             // Add rectangles to show module container
             topRowSVG.append("rect")
@@ -436,7 +466,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 .on('mouseover', function(e, d){ 
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50')
-                        .attr("stroke-width", 2.5);})
+                        .attr("stroke-width", 2.5);
+                })
                 .on('mouseout',function(e, d){
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50')
@@ -514,6 +545,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     d3.selectAll("#" + d.workflowRunID).transition()
                         .duration('50'); });
 
+            /*
             topRowSVG.on('mouseover', function(e, d){
                 var arrowPosition = calculateArrowPosition(d);
                 var [pos1, pos2] = d3.pointer(e);
@@ -529,7 +561,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     tooltip.transition()
                             .duration(500)
                             .style("opacity", 0);
-                });
+                });*/
             
             // Draw location Glyphs for modules
             svg.selectAll("g")

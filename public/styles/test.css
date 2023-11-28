@@ -12,6 +12,12 @@ header {
     vertical-align: bottom;
 }
 
+.tooltip {
+  display: inline;
+  position: fixed;
+  z-index: 99 !important; 
+}
+
 #company-logo {
     display: inline-block;
     vertical-align: center;
