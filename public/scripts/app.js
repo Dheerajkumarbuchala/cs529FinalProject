@@ -25,13 +25,13 @@ const allStatus = ["INIT", "new",             // New Item  => Light Sky Blue
 // Style variables
 const padding = 10;
 const cornerRadius = 5;
-const markerBoxWidth = 5;
-const markerBoxHeight = 5;
+const markerBoxWidth = 7;
+const markerBoxHeight = 7;
 const refX = markerBoxWidth / 2;
 const refY = markerBoxHeight / 2;
 const markerWidth = markerBoxWidth / 2;
 const markerHeight = markerBoxHeight / 2;
-const arrowPoints = [[0, 0], [0, 5], [5, 2]];
+const arrowPoints = [[0, 0], [0, 7], [7, 3]];
 
 // D3 functional variables
 let clicked = false;
@@ -846,8 +846,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 linksSVG.append("line")
                     .attr("x1", function(d) { return d.x})
                     .attr("y1", function(d) { return d.y})
-                    .attr("x2", transferInfo[0].x )
-                    .attr("y2", transferInfo[0].y )
+                    .attr("x2", transferInfo[0].x + (locRadius/2))
+                    .attr("y2", transferInfo[0].y - (locRadius/2))
                     .attr('stroke', function(d){
                         if(d.workflowRunID != null && d.isTransferStep == true)
                         {
@@ -1289,7 +1289,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Darken first column of chart to indicate it is the current step
             const BGColorMap = d3.scaleLinear()
-                .domain([0,totalStepNum/2])
+                .domain([0,1])
                 .range(["lightgray", "white"]);
 
             
@@ -1455,9 +1455,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         .attr("x", x + (padding/2))
                         .attr("y", y)
                         .attr("text-anchor", "start")
-                        .attr("font-size", "12px")
+                        .attr("font-size", "10px")
                         .attr("dy", "1.25em")
-                        .text(function(d) { return workflows[i].workflowRunID + ": " + nowSteps[j].action; })
+                        .text(function(d) { return workflows[i].workflowRunID + ": action " + nowSteps[j].action; })
                         .attr('id', function(d) {return workflows[i].workflowRunID}) 
                 }
             }
